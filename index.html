@@ -163,20 +163,26 @@
       };
 
       // Declare the layergroup before the function so that it can be accessed later on out of the function context.
-      var lg_towns = L.layerGroup().addTo(map);
-      var lg_nations = L.layerGroup();
+    var lg_towns = L.layerGroup().addTo(map);
+  var lg_landmarks = L.layerGroup();
+  var lg_parties = L.layerGroup();
+    var lg_nations = L.layerGroup();
       var lg_states = L.layerGroup();
       var lg_roads = L.layerGroup().addTo(map);
   // Layer used as search index - contains invisible markers for all locations so search works
   var searchLayer = L.layerGroup();
       // Timeline layers (created after fetching data)
       var timeline_towns = null;
+      var timeline_landmarks = null;
+      var timeline_parties = null;
       var timeline_nations = null;
       var timeline_states = null;
       var timeline_roads = null;
       // If the timeline plugin isn't available when we build features, store them here and create layers later
       var pendingTimelineFeatures = {
         towns: null,
+        landmarks: null,
+        parties: null,
         nations: null,
         states: null,
         roads: null
@@ -187,32 +193,83 @@
         if (!Number.isFinite(timelineMinYear) || !Number.isFinite(timelineMaxYear)) return;
         try {
           // If there are pending features and L.timeline is available, create them now
-            if (typeof L !== 'undefined' && typeof L.timeline === 'function') {
+              if (typeof L !== 'undefined' && typeof L.timeline === 'function' && (timeline_towns_count + timeline_nations_count + timeline_states_count + timeline_roads_count) > 0) {
               if (pendingTimelineFeatures.towns && !timeline_towns) {
                 timeline_towns = L.timeline({type:'FeatureCollection', features: pendingTimelineFeatures.towns}, {
                   pointToLayer: function(feature, latlng){ const icon = iconMap[feature.properties.icon] || iconMap['town']; return L.marker(latlng, {icon: icon, title: feature.properties.name}); },
-                  onEachFeature: function(feature, layer){ try { var popupContent = makeEntityPopupHtml(feature.properties); layer.bindPopup(popupContent, popupOptions); } catch(e) { if (feature.properties) layer.bindPopup('<h3>' + (feature.properties.name||'') + '</h3>', popupOptions); } },
+                  onEachFeature: function(feature, layer){ try { var base = Number((feature.properties && (feature.properties.line_weight || feature.properties.lineWeight)) || 2); try { layer.options._baseWeight = base; } catch(e){} var popupContent = makeEntityPopupHtml(feature.properties); layer.bindPopup(popupContent, popupOptions); } catch(e) { if (feature.properties) layer.bindPopup('<h3>' + (feature.properties.name||'') + '</h3>', popupOptions); } },
+                  getInterval: function(feature){ const s = Number(feature.properties.startYear); const e = Number(feature.properties.endYear); const start = Number.isFinite(s)?yearToMillis(s):null; const end = Number.isFinite(e)?(yearToMillis(e) + (365*24*60*60*1000 - 1)):(start||null); return start&&end?[start,end]:null; }
+                });
+              }
+              if (pendingTimelineFeatures.landmarks && !timeline_landmarks) {
+                timeline_landmarks = L.timeline({type:'FeatureCollection', features: pendingTimelineFeatures.landmarks}, {
+                                pointToLayer: function(feature, latlng){
+                                  try {
+                                    var props = (feature && feature.properties) ? feature.properties : {};
+                                    var tprop = (props.type || '').toString().toLowerCase();
+                                    // if bbox bounds present, return a LayerGroup and create image overlay in onEachFeature
+                                    if ((tprop === 'image_bbox' || tprop === 'image') && props.bounds && Array.isArray(props.bounds) && props.bounds.length === 2) {
+                                      return L.layerGroup();
+                                    }
+                                    var url = props.url || props.imageUrl || props.image_url || null;
+                                    if (tprop === 'image' && url) {
+                                      var iw = Number(props.image_width || props.width) || 240;
+                                      var ih = Number(props.image_height || props.height) || null;
+                                      var imgHtml = '<img src="' + encodeURI(url) + '" style="display:block;max-width:100%;width:' + iw + 'px;height:' + (ih?ih+'px':'auto') + ';"/>';
+                                      return L.marker(latlng, { icon: L.divIcon({ className: 'landmark-image-icon', html: imgHtml, iconSize: [iw, ih||iw], iconAnchor: [Math.round(iw/2), Math.round((ih||iw)/2)] }), title: props.name });
+                                    }
+                                  } catch(e){}
+                                  const icon = iconMap[(feature.properties && feature.properties.icon) || 'town'] || iconMap['town'];
+                                  return L.marker(latlng, {icon: icon, title: feature.properties.name});
+                                },
+                                style: function(feature){ var base = Number(feature.properties.line_weight) || 2; return {color: feature.properties.color || '#3388ff', weight: computeScaledLineWeight(base), opacity: Number(feature.properties.opacity)||0.9}; },
+                                onEachFeature: function(feature, layer){
+                                  try {
+                                    var props = (feature && feature.properties) ? feature.properties : {};
+                                    var tprop = (props.type || '').toString().toLowerCase();
+                                    if ((tprop === 'image_bbox' || (tprop === 'image' && props.bounds)) && layer && typeof layer.addLayer === 'function') {
+                                      try {
+                                        var b = props.bounds;
+                                        if (b && Array.isArray(b) && b.length === 2 && props.url) {
+                                          var ov = L.imageOverlay(props.url, b, { interactive: true });
+                                          layer.addLayer(ov);
+                                          layer._imageOverlay = ov;
+                                          try { ov.bindPopup(makeEntityPopupHtml(props), popupOptions); } catch(e){}
+                                        }
+                                      } catch(e) { console.log('pending timeline image_bbox onEachFeature error', e); }
+                                      return;
+                                    }
+                                  } catch(e){}
+                                  try { var base = Number((feature.properties && (feature.properties.line_weight || feature.properties.lineWeight)) || 2); try { layer.options._baseWeight = base; } catch(e){} var popupContent = makeEntityPopupHtml(feature.properties); layer.bindPopup(popupContent, popupOptions); } catch(e) { if (feature.properties && feature.properties.name) layer.bindPopup('<h3>' + (feature.properties.name||'') + '</h3>', popupOptions); }
+                                },
+                  getInterval: function(feature){ const s = Number(feature.properties.startYear); const e = Number(feature.properties.endYear); const start = Number.isFinite(s)?yearToMillis(s):null; const end = Number.isFinite(e)?(yearToMillis(e) + (365*24*60*60*1000 - 1)):(start||null); return start&&end?[start,end]:null; }
+                });
+              }
+              if (pendingTimelineFeatures.parties && !timeline_parties) {
+                timeline_parties = L.timeline({type:'FeatureCollection', features: pendingTimelineFeatures.parties}, {
+                  pointToLayer: function(feature, latlng){ const icon = iconMap[feature.properties.icon] || iconMap['town']; return L.marker(latlng, {icon: icon, title: feature.properties.name}); },
+                  onEachFeature: function(feature, layer){ try { var base = Number((feature.properties && (feature.properties.line_weight || feature.properties.lineWeight)) || 2); try { layer.options._baseWeight = base; } catch(e){} var popupContent = makeEntityPopupHtml(feature.properties); layer.bindPopup(popupContent, popupOptions); } catch(e) { if (feature.properties && feature.properties.name) layer.bindPopup('<h3>' + (feature.properties.name||'') + '</h3>', popupOptions); } },
                   getInterval: function(feature){ const s = Number(feature.properties.startYear); const e = Number(feature.properties.endYear); const start = Number.isFinite(s)?yearToMillis(s):null; const end = Number.isFinite(e)?(yearToMillis(e) + (365*24*60*60*1000 - 1)):(start||null); return start&&end?[start,end]:null; }
                 });
               }
               if (pendingTimelineFeatures.nations && !timeline_nations) {
                 timeline_nations = L.timeline({type:'FeatureCollection', features: pendingTimelineFeatures.nations}, {
-                  style: function(feature){ return {color: feature.properties.color || '#3388ff', weight:2, opacity:0.6}; },
-                  onEachFeature: function(feature, layer){ try { var popupContent = makeEntityPopupHtml(feature.properties); layer.bindPopup(popupContent, popupOptions); } catch(e) { if (feature.properties && feature.properties.name) layer.bindPopup('<h3>' + (feature.properties.name||'') + '</h3>', popupOptions); } },
+                  style: function(feature){ var base = Number(feature.properties.line_weight) || 2; return {color: feature.properties.color || '#3388ff', weight: computeScaledLineWeight(base), opacity:0.6}; },
+                  onEachFeature: function(feature, layer){ try { var base = Number((feature.properties && (feature.properties.line_weight || feature.properties.lineWeight)) || 2); try { layer.options._baseWeight = base; } catch(e){} var popupContent = makeEntityPopupHtml(feature.properties); layer.bindPopup(popupContent, popupOptions); } catch(e) { if (feature.properties && feature.properties.name) layer.bindPopup('<h3>' + (feature.properties.name||'') + '</h3>', popupOptions); } },
                   getInterval: function(feature){ const s = Number(feature.properties.startYear); const e = Number(feature.properties.endYear); const start = Number.isFinite(s)?yearToMillis(s):null; const end = Number.isFinite(e)?(yearToMillis(e) + (365*24*60*60*1000 - 1)):(start||null); return start&&end?[start,end]:null; }
                 });
               }
               if (pendingTimelineFeatures.states && !timeline_states) {
                 timeline_states = L.timeline({type:'FeatureCollection', features: pendingTimelineFeatures.states}, {
-                  style: function(feature){ return {color: feature.properties.color || '#3388ff', weight:2, opacity:0.6}; },
-                  onEachFeature: function(feature, layer){ try { var popupContent = makeEntityPopupHtml(feature.properties); layer.bindPopup(popupContent, popupOptions); } catch(e) { if (feature.properties && feature.properties.name) layer.bindPopup('<h3>' + (feature.properties.name||'') + '</h3>', popupOptions); } },
+                  style: function(feature){ var base = Number(feature.properties.line_weight) || 2; return {color: feature.properties.color || '#3388ff', weight: computeScaledLineWeight(base), opacity:0.6}; },
+                  onEachFeature: function(feature, layer){ try { var base = Number((feature.properties && (feature.properties.line_weight || feature.properties.lineWeight)) || 2); try { layer.options._baseWeight = base; } catch(e){} var popupContent = makeEntityPopupHtml(feature.properties); layer.bindPopup(popupContent, popupOptions); } catch(e) { if (feature.properties && feature.properties.name) layer.bindPopup('<h3>' + (feature.properties.name||'') + '</h3>', popupOptions); } },
                   getInterval: function(feature){ const s = Number(feature.properties.startYear); const e = Number(feature.properties.endYear); const start = Number.isFinite(s)?yearToMillis(s):null; const end = Number.isFinite(e)?(yearToMillis(e) + (365*24*60*60*1000 - 1)):(start||null); return start&&end?[start,end]:null; }
                 });
               }
               if (pendingTimelineFeatures.roads && !timeline_roads) {
                 timeline_roads = L.timeline({type:'FeatureCollection', features: pendingTimelineFeatures.roads}, {
-                  style: function(feature){ return {color: feature.properties.color || '#3388ff', weight: Number(feature.properties.line_weight) || 2}; },
-                  onEachFeature: function(feature, layer){ try { var popupContent = makeEntityPopupHtml(feature.properties); layer.bindPopup(popupContent, popupOptions); } catch(e) { if (feature.properties && feature.properties.name) layer.bindPopup('<h3>' + (feature.properties.name||'') + '</h3>', popupOptions); } },
+                  style: function(feature){ var base = Number(feature.properties.line_weight) || 2; return {color: feature.properties.color || '#3388ff', weight: computeScaledLineWeight(base)}; },
+                  onEachFeature: function(feature, layer){ try { var base = Number((feature.properties && (feature.properties.line_weight || feature.properties.lineWeight)) || 2); try { layer.options._baseWeight = base; } catch(e){} var popupContent = makeEntityPopupHtml(feature.properties); layer.bindPopup(popupContent, popupOptions); } catch(e) { if (feature.properties && feature.properties.name) layer.bindPopup('<h3>' + (feature.properties.name||'') + '</h3>', popupOptions); } },
                   getInterval: function(feature){ const s = Number(feature.properties.startYear); const e = Number(feature.properties.endYear); const start = Number.isFinite(s)?yearToMillis(s):null; const end = Number.isFinite(e)?(yearToMillis(e) + (365*24*60*60*1000 - 1)):(start||null); return start&&end?[start,end]:null; }
                 });
               }
@@ -220,14 +277,16 @@
 
           // Add any timeline layers to map and initialize time
           if (timeline_towns && (!timeline_towns._addedToMap)) { try { timeline_towns.addTo(map); timeline_towns._addedToMap = true; } catch(e){} }
+          if (timeline_landmarks && (!timeline_landmarks._addedToMap)) { try { timeline_landmarks.addTo(map); timeline_landmarks._addedToMap = true; } catch(e){} }
           if (timeline_nations && (!timeline_nations._addedToMap)) { try { timeline_nations.addTo(map); timeline_nations._addedToMap = true; } catch(e){} }
           if (timeline_states && (!timeline_states._addedToMap)) { try { timeline_states.addTo(map); timeline_states._addedToMap = true; } catch(e){} }
           if (timeline_roads && (!timeline_roads._addedToMap)) { try { timeline_roads.addTo(map); timeline_roads._addedToMap = true; } catch(e){} }
 
-          // set initial time so features whose interval includes the min year are visible
-          if (Number.isFinite(timelineMinYear)) {
+          // set initial time so features whose interval includes the configured year are visible
+          if (Number.isFinite(timelineMinYear) && Number.isFinite(timelineMaxYear)) {
             // if the user requested an explicit year via URL, prefer that
-            var initialYear = (Number.isFinite(requestedYear) ? Number(requestedYear) : Number(timelineMinYear));
+            // otherwise default to the timeline's max year so map starts at the most recent date
+            var initialYear = (Number.isFinite(requestedYear) ? Number(requestedYear) : Number(timelineMaxYear));
             var t = yearToMillis(Number(initialYear));
             // remember current selection
             timelineCurrentTime = t;
@@ -235,6 +294,8 @@
             if (timeline_nations && timeline_nations.setTime) timeline_nations.setTime(t);
             if (timeline_states && timeline_states.setTime) timeline_states.setTime(t);
             if (timeline_roads && timeline_roads.setTime) timeline_roads.setTime(t);
+            if (timeline_landmarks && timeline_landmarks.setTime) timeline_landmarks.setTime(t);
+            if (timeline_parties && timeline_parties.setTime) timeline_parties.setTime(t);
           }
           // Diagnostic: verify which timeline feature layers are actually present on the map
           try {
@@ -255,13 +316,17 @@
             inspectTimeline(timeline_towns, 'towns');
             inspectTimeline(timeline_nations, 'nations');
             inspectTimeline(timeline_states, 'states');
-            inspectTimeline(timeline_roads, 'roads');
+                  inspectTimeline(timeline_roads, 'roads');
+                  inspectTimeline(timeline_landmarks, 'landmarks');
+                  inspectTimeline(timeline_parties, 'parties');
           } catch(e) { console.log('timeline inspect error', e); }
         } catch (e) {
           console.log('ensureTimelinesOnMap error', e);
         }
       }
       var timeline_towns_count = 0;
+  var timeline_landmarks_count = 0;
+        var timeline_parties_count = 0;
       var timeline_nations_count = 0;
       var timeline_states_count = 0;
       var timeline_roads_count = 0;
@@ -292,6 +357,28 @@
         d.setUTCHours(0,0,0,0);
         return d.getTime();
       }
+
+    // Compute a scaled line weight based on current zoom so vector strokes appear visually consistent.
+    // At zoom 7 (ref), use the sheet base weight. At zoom 1, scale down to 5% of base.
+    // For zoom > 7, clamp to base (thickest). For zoom < 7, linearly interpolate down.
+    function computeScaledLineWeight(baseWeight) {
+      try {
+        var b = Number(baseWeight) || 1;
+        var z = (typeof map !== 'undefined' && map.getZoom) ? map.getZoom() : 7;
+        var ref = 7; // reference zoom where base weight applies (sheet value, thickest)
+        // For z >= ref clamp to base (no thickening beyond zoom 7)
+        if (z >= ref) {
+          return Math.max(0.5, Math.round(b));
+        }
+        // For z < ref, linearly interpolate from base (at z=7) down to 0.05*base (at z=1)
+        // factor(z) goes from 1 (at z=7) to 0.05 (at z=1)
+        var factor = 0.05 + 0.95 * (z - 1) / (ref - 1);
+        var w = b * factor;
+        var rounded = Math.max(0.5, Math.round(w));
+        if (window.MAP_DEBUG) console.log('computeScaledLineWeight', {base: b, zoom: z, ref: ref, factor: factor, raw: w, rounded: rounded});
+        return rounded;
+      } catch (e) { if (window.MAP_DEBUG) console.log('computeScaledLineWeight error', e); return Math.max(0.5, Math.round(Number(baseWeight) || 1)); }
+    }
 
       // Helper: read a property with common name variants
       function readYearProp(obj, base) {
@@ -369,6 +456,8 @@
       if (timeline_nations && timeline_nations.setTime) timeline_nations.setTime(t);
       if (timeline_states && timeline_states.setTime) timeline_states.setTime(t);
       if (timeline_roads && timeline_roads.setTime) timeline_roads.setTime(t);
+      if (timeline_landmarks && timeline_landmarks.setTime) timeline_landmarks.setTime(t);
+      if (timeline_parties && timeline_parties.setTime) timeline_parties.setTime(t);
     } catch (e) { console.log('setTimelineYear setTime error', e); }
     // update UI
     try {
@@ -443,6 +532,10 @@
             if (timeline_roads) { timeline_roads.addTo(map); if (timelineCurrentTime) timeline_roads.setTime(timelineCurrentTime); }
             else if (pendingTimelineFeatures.roads) { ensureTimelinesOnMap(); }
           }
+          if (e.name === 'Landmarks' || e.layer === lg_landmarks) {
+            if (timeline_landmarks) { timeline_landmarks.addTo(map); if (timelineCurrentTime) timeline_landmarks.setTime(timelineCurrentTime); }
+            else if (pendingTimelineFeatures.landmarks) { ensureTimelinesOnMap(); }
+          }
         } catch (err) { console.log('overlayadd handler error', err); }
       });
 
@@ -460,6 +553,9 @@
           }
           if (e.name === 'Roads' || e.layer === lg_roads) {
             if (timeline_roads && timeline_roads.remove) timeline_roads.remove();
+          }
+          if (e.name === 'Landmarks' || e.layer === lg_landmarks) {
+            if (timeline_landmarks && timeline_landmarks.remove) timeline_landmarks.remove();
           }
         } catch (err) { console.log('overlayremove handler error', err); }
       });
@@ -535,6 +631,88 @@
         shadowAnchor: [12, 41]
       });
       
+      // Custom markers added by user
+      var blade = L.icon({
+        iconUrl: 'images/markers/blade.png',
+        iconSize: [30, 41],
+        iconAnchor: [15, 41],
+        popupAnchor: [0, -30],
+        shadowUrl: 'images/markers/blade_shadow.png',
+        shadowSize: [30, 41],
+        shadowAnchor: [12, 41]
+      });
+      
+
+      var discovery = L.icon({
+        iconUrl: 'images/markers/discovery.png',
+        iconSize: [30, 41],
+        iconAnchor: [15, 41],
+        popupAnchor: [0, -30],
+        shadowUrl: 'images/markers/discovery_shadow.png',
+        shadowSize: [30, 41],
+        shadowAnchor: [12, 41]
+      });
+
+      var dragon1 = L.icon({
+        iconUrl: 'images/markers/dragon1.png',
+        iconSize: [30, 41],
+        iconAnchor: [15, 41],
+        popupAnchor: [0, -30],
+        shadowUrl: 'images/markers/dragon1_shadow.png',
+        shadowSize: [30, 41],
+        shadowAnchor: [12, 41]
+      });
+
+      var dragon2 = L.icon({
+        iconUrl: 'images/markers/dragon2.png',
+        iconSize: [30, 41],
+        iconAnchor: [15, 41],
+        popupAnchor: [0, -30],
+        shadowUrl: 'images/markers/dragon2_shadow.png',
+        shadowSize: [30, 41],
+        shadowAnchor: [12, 41]
+      });
+
+      var justice = L.icon({
+        iconUrl: 'images/markers/justice.png',
+        iconSize: [30, 41],
+        iconAnchor: [15, 41],
+        popupAnchor: [0, -30],
+        shadowUrl: 'images/markers/justice_shadow.png',
+        shadowSize: [30, 41],
+        shadowAnchor: [12, 41]
+      });
+
+      var mountain = L.icon({
+        iconUrl: 'images/markers/mountain.png',
+        iconSize: [30, 41],
+        iconAnchor: [15, 41],
+        popupAnchor: [0, -30],
+        shadowUrl: 'images/markers/mountain_shadow.png',
+        shadowSize: [30, 41],
+        shadowAnchor: [12, 41]
+      });
+
+      var veil = L.icon({
+        iconUrl: 'images/markers/veil.png',
+        iconSize: [30, 41],
+        iconAnchor: [15, 41],
+        popupAnchor: [0, -30],
+        shadowUrl: 'images/markers/veil_shadow.png',
+        shadowSize: [30, 41],
+        shadowAnchor: [12, 41]
+      });
+
+      var wyrd = L.icon({
+        iconUrl: 'images/markers/wyrd.png',
+        iconSize: [30, 41],
+        iconAnchor: [15, 41],
+        popupAnchor: [0, -30],
+        shadowUrl: 'images/markers/wyrd_shadow.png',
+        shadowSize: [30, 41],
+        shadowAnchor: [12, 41]
+      });
+      
       //Moveable Marker that displays its current coordinates
       var marker  = L.marker([-11.994986, -83.95752], {draggable: true}).addTo(map)
       marker.bindPopup('');
@@ -550,7 +728,16 @@
         port_city: port_city,
         city: city,
         tree: tree,
-        swamp: swamp
+        swamp: swamp,
+        // user custom icons
+        blade: blade,
+        discovery: discovery,
+        dragon1: dragon1,
+        dragon2: dragon2,
+        justice: justice,
+        mountain: mountain,
+        veil: veil,
+        wyrd: wyrd
       };
 
       // Responsive popup sizing used across the app. computePopupOptions() returns sizes tailored to viewport.
@@ -666,6 +853,23 @@
             }
           }
 
+          // Add invisible search markers for timeline-managed point features so Control.Search can find them
+          try {
+            timelineFeatures.forEach(function(f) {
+              try {
+                if (f && f.geometry && f.geometry.type === 'Point' && Array.isArray(f.geometry.coordinates)) {
+                  var lon = Number(f.geometry.coordinates[0]);
+                  var lat = Number(f.geometry.coordinates[1]);
+                  if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                    var sm = L.marker([lat, lon], { title: f.properties && (f.properties.name || ''), interactive: false, opacity: 0 });
+                    sm.feature = { properties: f.properties || {} };
+                    searchLayer.addLayer(sm);
+                  }
+                }
+              } catch (e) {}
+            });
+          } catch (e) {}
+
           if (timelineFeatures.length > 0) {
             if (typeof L !== 'undefined' && typeof L.timeline === 'function') {
               timeline_towns = L.timeline({type: 'FeatureCollection', features: timelineFeatures}, {
@@ -675,6 +879,8 @@
               },
               onEachFeature: function(feature, layer) {
                 try {
+                  var base = Number((feature.properties && (feature.properties.line_weight || feature.properties.lineWeight)) || 2);
+                  try { layer.options._baseWeight = base; } catch(e){}
                   var popupContent = makeEntityPopupHtml(feature.properties);
                   layer.bindPopup(popupContent, popupOptions);
                 } catch(e) { if (feature.properties) layer.bindPopup('<h3>' + (feature.properties.name||'') + '</h3>', popupOptions); }
@@ -771,9 +977,23 @@
               // create static polygon (Leaflet expects [lat, lng])
               const latlngs = rings.map(function(p){ return [p[1], p[0]]; });
               const poly = L.polygon(latlngs, {color: item.color});
+              try { poly.options._baseWeight = Number(item.line_weight || item.weight) || 2; } catch(e) { poly.options._baseWeight = Number(item.line_weight || item.weight) || 2; }
               lg_nations.addLayer(poly);
               // Bind a rich popup built from sheet fields (description, thumbnail, link)
-        try { poly.bindPopup(makeEntityPopupHtml(item), popupOptions); } catch(e){}
+        try {
+          var entityHtml = makeEntityPopupHtml(item);
+          poly.bindPopup(entityHtml, popupOptions);
+          // store original popup HTML so we can restore it after edits
+          poly._entityPopupHtml = entityHtml;
+          // When editing starts, show coordinate popup (like newly-created polygons)
+          poly.on && poly.on('pm:editstart', function() {
+            try { setPopup(poly); poly.openPopup(); } catch(e) {}
+          });
+          // After update/finish editing, restore original entity popup
+          poly.on && poly.on('pm:update', function() {
+            try { poly.bindPopup(poly._entityPopupHtml, popupOptions); poly.openPopup(); } catch(e) {}
+          });
+        } catch(e){}
               // no image overlays for static nations; rely on polygon popups only
             }
           }
@@ -782,10 +1002,13 @@
             if (typeof L !== 'undefined' && typeof L.timeline === 'function') {
               timeline_nations = L.timeline({type: 'FeatureCollection', features: timelineFeatures}, {
               style: function(feature) {
-                return {color: feature.properties.color || '#3388ff', weight: 2, opacity: 0.6};
+                var base = Number(feature.properties.line_weight) || 2;
+                return {color: feature.properties.color || '#3388ff', weight: computeScaledLineWeight(base), opacity: 0.6};
               },
               onEachFeature: function(feature, layer) {
                 try {
+                  var base = Number((feature.properties && (feature.properties.line_weight || feature.properties.lineWeight)) || 2);
+                  try { layer.options._baseWeight = base; } catch(e){}
                   var popupContent = makeEntityPopupHtml(feature.properties);
                   layer.bindPopup(popupContent, popupOptions);
                 } catch(e) { /* fallback: simple name */ try { layer.bindPopup('<h3>' + (feature.properties && feature.properties.name||'') + '</h3>', popupOptions); } catch(e){} }
@@ -874,9 +1097,16 @@
             } else {
               const latlngs = rings.map(function(p){ return [p[1], p[0]]; });
               const poly = L.polygon(latlngs, {color: item.color});
+              try { poly.options._baseWeight = Number(item.line_weight || item.weight) || 2; } catch(e) { poly.options._baseWeight = Number(item.line_weight || item.weight) || 2; }
               lg_states.addLayer(poly);
               // bind rich popup for static state polygons
-              try { poly.bindPopup(makeEntityPopupHtml(item), popupOptions); } catch(e){}
+              try {
+                var entityHtml2 = makeEntityPopupHtml(item);
+                poly.bindPopup(entityHtml2, popupOptions);
+                poly._entityPopupHtml = entityHtml2;
+                poly.on && poly.on('pm:editstart', function() { try { setPopup(poly); poly.openPopup(); } catch(e) {} });
+                poly.on && poly.on('pm:update', function() { try { poly.bindPopup(poly._entityPopupHtml, popupOptions); poly.openPopup(); } catch(e) {} });
+              } catch(e){}
               // no image overlays for static states; rely on polygon popups only
             }
           }
@@ -885,10 +1115,13 @@
             if (typeof L !== 'undefined' && typeof L.timeline === 'function') {
               timeline_states = L.timeline({type: 'FeatureCollection', features: timelineFeatures}, {
               style: function(feature) {
-                return {color: feature.properties.color || '#3388ff', weight: 2, opacity: 0.6};
+                var base = Number(feature.properties.line_weight) || 2;
+                return {color: feature.properties.color || '#3388ff', weight: computeScaledLineWeight(base), opacity: 0.6};
               },
               onEachFeature: function(feature, layer) {
                 try {
+                  var base = Number((feature.properties && (feature.properties.line_weight || feature.properties.lineWeight)) || 2);
+                  try { layer.options._baseWeight = base; } catch(e){}
                   var popupContent = makeEntityPopupHtml(feature.properties);
                   layer.bindPopup(popupContent, popupOptions);
                 } catch(e) { layer.bindPopup('<h3>' + (feature.properties && feature.properties.name||'') + '</h3>', popupOptions); }
@@ -976,6 +1209,8 @@
               // create static polyline
               const latlngs = line.map(function(p){ return [p[1], p[0]]; });
               const road = L.polyline(latlngs, {color: item.color, weight: item.line_weight});
+              // store base weight so we can rescale on zoom
+              try { road.options._baseWeight = Number(item.line_weight) || 2; } catch(e) { road.options._baseWeight = Number(item.line_weight) || 2; }
               lg_roads.addLayer(road);
             }
           }
@@ -984,10 +1219,14 @@
             if (typeof L !== 'undefined' && typeof L.timeline === 'function') {
               timeline_roads = L.timeline({type: 'FeatureCollection', features: timelineFeatures}, {
               style: function(feature) {
-                return {color: feature.properties.color || '#3388ff', weight: Number(feature.properties.line_weight) || 2};
+                // set initial weight based on base line weight; actual scaling will occur on zoom
+                var base = Number(feature.properties.line_weight) || 2;
+                return {color: feature.properties.color || '#3388ff', weight: computeScaledLineWeight(base)};
               },
               onEachFeature: function(feature, layer) {
                 try {
+                  var base = Number((feature.properties && (feature.properties.line_weight || feature.properties.lineWeight)) || 2);
+                  try { layer.options._baseWeight = base; } catch(e){}
                   var popupContent = makeEntityPopupHtml(feature.properties);
                   layer.bindPopup(popupContent, popupOptions);
                 } catch(e) { layer.bindPopup('<h3>' + (feature.properties && feature.properties.name||'') + '</h3>', popupOptions); }
@@ -1017,16 +1256,345 @@
         }
       }
 
+      // Function to pull the data from the google sheet landmarks page and create markers/polylines/polygons
+      async function getLandmarks() {
+        let url = 'https://script.google.com/macros/s/AKfycbx6IJwr3GuU0V2-vHywpL3bgLxcjdiOze6G2IhH42MOmnNzI4qm4okca76tlw3v0o1BBw/exec';
+        try {
+          let response = await fetch(url);
+          const data = await response.json();
+          console.log('getLandmarks: loaded', data && data.length, 'items');
+
+          const timelineFeatures = [];
+
+          data.forEach(function(item) {
+            try {
+              if (!item) return;
+              // Normalize type
+              var t = (item.type || item.Type || '').toString().trim().toLowerCase();
+              var name = item.name || item.Name || item.title || '';
+              var color = item.color || item.Color || null;
+              var icon = item.icon || item.Icon || null;
+              var lw = Number(item.line_weight || item.line_weight || item.lineWeight || item.lineWeight || item.weight || 0) || 0;
+              // years
+              var sraw = item.startYear || item.startyear || item.start || item.Start || null;
+              var eraw = item.endYear || item.endyear || item.end || item.End || null;
+              var s = parseYear(sraw);
+              var e = parseYear(eraw != null ? eraw : sraw);
+              if (Number.isFinite(s)) timelineMinYear = Math.min(timelineMinYear, s);
+              if (Number.isFinite(e)) timelineMaxYear = Math.max(timelineMaxYear, e);
+
+              var coords = (item.coords || item.Coords || '').toString();
+              if (t === 'image') {
+                // IMAGE handling: support both center-point images and bbox images
+                var imgUrl = item.url || item.Url || item.imageUrl || item.image_url || item.Image || null;
+                // prefer bbox columns if present: coords_tl + coords_br (or coords_tr as fallback)
+                var tlRaw = item.coords_tl || item.coordsTl || item['coords_tl'] || null;
+                var brRaw = item.coords_br || item.coordsBr || item['coords_br'] || null;
+                // allow a coords_tr fallback if user named the second corner that way
+                if (!brRaw) brRaw = item.coords_tr || item.coordsTr || item['coords_tr'] || null;
+                // parse bbox if both corners are present
+                var bboxBounds = null;
+                if (tlRaw && brRaw) {
+                  try {
+                    var tlParts = tlRaw.toString().split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+                    var brParts = brRaw.toString().split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+                    if (tlParts.length >= 2 && brParts.length >= 2) {
+                      var tlLat = parseFloat(tlParts[0]), tlLon = parseFloat(tlParts[1]);
+                      var brLat = parseFloat(brParts[0]), brLon = parseFloat(brParts[1]);
+                      if (Number.isFinite(tlLat) && Number.isFinite(tlLon) && Number.isFinite(brLat) && Number.isFinite(brLon)) {
+                        var south = Math.min(tlLat, brLat);
+                        var north = Math.max(tlLat, brLat);
+                        var west = Math.min(tlLon, brLon);
+                        var east = Math.max(tlLon, brLon);
+                        bboxBounds = [[south, west], [north, east]]; // Leaflet bounds: [[south, west], [north, east]]
+                      }
+                    }
+                  } catch(e) { console.log('parse bbox error', e); }
+                }
+
+                // If bbox present, create image overlay (static) or timeline-managed feature with bounds
+                if (bboxBounds && imgUrl) {
+                  if (Number.isFinite(s) || Number.isFinite(e)) {
+                    // timeline-managed bbox image: keep a point geometry so timeline can place a feature layer, store bounds
+                    timelineFeatures.push({
+                      type: 'Feature',
+                      geometry: { type: 'Point', coordinates: [ (bboxBounds[0][1] + bboxBounds[1][1]) / 2, (bboxBounds[0][0] + bboxBounds[1][0]) / 2 ] },
+                      properties: { name: name, url: imgUrl, type: 'image_bbox', bounds: bboxBounds, startYear: s, endYear: e }
+                    });
+                  } else {
+                    // static bbox image: add image overlay to landmarks layergroup
+                    try {
+                      var ov = L.imageOverlay(imgUrl, bboxBounds, { interactive: true });
+                      lg_landmarks.addLayer(ov);
+                      try { ov.bindPopup(makeEntityPopupHtml(item), popupOptions); } catch(e) { try { ov.bindPopup('<h3>' + name + '</h3>', popupOptions); } catch(e){} }
+                      // add search marker at center of bbox
+                      try { var cx = (bboxBounds[0][0] + bboxBounds[1][0]) / 2; var cy = (bboxBounds[0][1] + bboxBounds[1][1]) / 2; var sMimg2 = L.marker([cx, cy], { title: name || '', interactive: false, opacity: 0 }); sMimg2.feature = { properties: { name: name } }; searchLayer.addLayer(sMimg2); } catch(e){}
+                    } catch(e) { console.log('create static bbox image error', e); }
+                  }
+                } else {
+                  // fallback: single center coordinate image (existing divIcon behaviour)
+                  var partsImg = coords.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+                  if (partsImg.length >= 2 && imgUrl) {
+                    var latI = parseFloat(partsImg[0]);
+                    var lonI = parseFloat(partsImg[1]);
+                    if (Number.isFinite(latI) && Number.isFinite(lonI)) {
+                      if (Number.isFinite(s) || Number.isFinite(e)) {
+                        timelineFeatures.push({
+                          type: 'Feature',
+                          geometry: { type: 'Point', coordinates: [lonI, latI] },
+                          properties: { name: name, url: imgUrl, type: 'image', startYear: s, endYear: e }
+                        });
+                      } else {
+                        try {
+                          var iw = Number(item.image_width || item.width) || 240;
+                          var ih = Number(item.image_height || item.height) || null;
+                          var imgHtml = '<img src="' + encodeURI(imgUrl) + '" style="display:block;max-width:100%;width:' + iw + 'px;height:' + (ih?ih+'px':'auto') + ';"/>';
+                          var di = L.divIcon({ className: 'landmark-image-icon', html: imgHtml, iconSize: [iw, ih||iw], iconAnchor: [Math.round(iw/2), Math.round((ih||iw)/2)] });
+                          var mkImg = L.marker([latI, lonI], { icon: di, title: name });
+                          try { mkImg.bindPopup(makeEntityPopupHtml(item), popupOptions); } catch(e){ mkImg.bindPopup('<h3>' + name + '</h3>', popupOptions); }
+                          lg_landmarks.addLayer(mkImg);
+                          try { var sMimg = L.marker([latI, lonI], { title: name || '', interactive: false, opacity: 0 }); sMimg.feature = { properties: { name: name } }; searchLayer.addLayer(sMimg); } catch(e){}
+                        } catch(e) { console.log('create static image landmark error', e); }
+                      }
+                    }
+                  }
+                }
+              } else if (t === 'marker' || t === 'point') {
+                // expect 'lat,lon'
+                var parts = coords.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+                if (parts.length >= 2) {
+                  var lat = parseFloat(parts[0]);
+                  var lon = parseFloat(parts[1]);
+                  if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                    if (Number.isFinite(s) || Number.isFinite(e)) {
+                      // timeline-managed point feature
+                      timelineFeatures.push({
+                        type: 'Feature',
+                        geometry: { type: 'Point', coordinates: [lon, lat] },
+                        properties: { name: name, color: color, icon: icon, startYear: s, endYear: e, line_weight: lw }
+                      });
+                    } else {
+                      // static marker
+                      var mk = L.marker([lat, lon], { icon: iconMap[icon] || iconMap['town'], title: name });
+                      try { mk.bindPopup(makeEntityPopupHtml(item), popupOptions); } catch(e){ mk.bindPopup('<h3>' + name + '</h3>', popupOptions); }
+                      lg_landmarks.addLayer(mk);
+                    }
+                  }
+                }
+              } else if (t === 'polyline' || t === 'line' || t === 'linestring') {
+                // coords: lat,lon,lat2,lon2,...
+                var vals = coords.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+                var latlngs = [];
+                for (var i = 0; i + 1 < vals.length; i += 2) {
+                  var la = parseFloat(vals[i]);
+                  var lo = parseFloat(vals[i+1]);
+                  if (Number.isFinite(la) && Number.isFinite(lo)) latlngs.push([la, lo]);
+                }
+                if (latlngs.length > 0) {
+                  if (Number.isFinite(s) || Number.isFinite(e)) {
+                    var coordsGeo = latlngs.map(function(p){ return [p[1], p[0]]; });
+                    timelineFeatures.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: coordsGeo }, properties: { name: name, color: color, line_weight: lw, startYear: s, endYear: e } });
+                  } else {
+                    var pl = L.polyline(latlngs, { color: color || '#3388ff', weight: lw || 2 });
+                    try { pl.bindPopup(makeEntityPopupHtml(item), popupOptions); } catch(e){ pl.bindPopup('<h3>' + name + '</h3>', popupOptions); }
+                    try { pl.options._baseWeight = Number(lw) || 2; } catch(e) { pl.options._baseWeight = Number(lw) || 2; }
+                    lg_landmarks.addLayer(pl);
+                  }
+                }
+              } else if (t === 'polygon') {
+                var vals2 = coords.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+                var ring = [];
+                for (var k = 0; k + 1 < vals2.length; k += 2) {
+                  var la2 = parseFloat(vals2[k]);
+                  var lo2 = parseFloat(vals2[k+1]);
+                  if (Number.isFinite(la2) && Number.isFinite(lo2)) ring.push([la2, lo2]);
+                }
+                if (ring.length > 0) {
+                  if (Number.isFinite(s) || Number.isFinite(e)) {
+                    var polyCoords = [ ring.map(function(p){ return [p[1], p[0]]; }) ];
+                    timelineFeatures.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: polyCoords }, properties: { name: name, color: color, line_weight: lw, startYear: s, endYear: e } });
+                  } else {
+                    var pg = L.polygon(ring, { color: color || '#3388ff' });
+                    try { pg.bindPopup(makeEntityPopupHtml(item), popupOptions); } catch(e){ pg.bindPopup('<h3>' + name + '</h3>', popupOptions); }
+                    try { pg.options._baseWeight = Number(lw) || 2; } catch(e) { pg.options._baseWeight = Number(lw) || 2; }
+                    lg_landmarks.addLayer(pg);
+                  }
+                }
+              }
+              // add a search marker for points (visible/static)
+              try {
+                if (!(Number.isFinite(s) || Number.isFinite(e)) && name) {
+                  // for static markers we added mk; also add invisible search marker if coordinates present
+                  if (t === 'marker' && coords) {
+                    var parts2 = coords.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+                    if (parts2.length >= 2) {
+                      var la3 = parseFloat(parts2[0]); var lo3 = parseFloat(parts2[1]);
+                      if (Number.isFinite(la3) && Number.isFinite(lo3)) {
+                        var sM = L.marker([la3, lo3], { title: name || '', interactive: false, opacity: 0 });
+                        sM.feature = { properties: { name: name } };
+                        searchLayer.addLayer(sM);
+                      }
+                    }
+                  }
+                }
+              } catch (ee) {}
+            } catch (e) { console.log('getLandmarks row error', e); }
+          });
+
+            if (timelineFeatures.length > 0) {
+            if (typeof L !== 'undefined' && typeof L.timeline === 'function') {
+              timeline_landmarks = L.timeline({ type: 'FeatureCollection', features: timelineFeatures }, {
+                pointToLayer: function(feature, latlng) {
+                  try {
+                    var props = (feature && feature.properties) ? feature.properties : {};
+                    var tprop = (props.type || '').toString().toLowerCase();
+                    var url = props.url || props.imageUrl || props.image_url || null;
+                    // If this is a bbox image feature, return an empty LayerGroup — we'll create the image overlay in onEachFeature
+                    if ((tprop === 'image_bbox' || tprop === 'image') && props.bounds && Array.isArray(props.bounds) && props.bounds.length === 2) {
+                      return L.layerGroup();
+                    }
+                    // If it's a center-point image, render as a divIcon marker
+                    if (tprop === 'image' && url) {
+                      var iw = Number(props.image_width || props.width) || 240;
+                      var ih = Number(props.image_height || props.height) || null;
+                      var imgHtml = '<img src="' + encodeURI(url) + '" style="display:block;max-width:100%;width:' + iw + 'px;height:' + (ih?ih+'px':'auto') + ';"/>';
+                      return L.marker(latlng, { icon: L.divIcon({ className: 'landmark-image-icon', html: imgHtml, iconSize: [iw, ih||iw], iconAnchor: [Math.round(iw/2), Math.round((ih||iw)/2)] }), title: props.name });
+                    }
+                  } catch(e){}
+                  const icon = iconMap[(feature.properties && feature.properties.icon) || 'town'] || iconMap['town'];
+                  return L.marker(latlng, { icon: icon, title: feature.properties.name });
+                },
+                style: function(feature) { var base = Number(feature.properties.line_weight) || 2; return { color: feature.properties.color || '#3388ff', weight: computeScaledLineWeight(base) }; },
+                onEachFeature: function(feature, layer) {
+                  try {
+                    var props = (feature && feature.properties) ? feature.properties : {};
+                    var tprop = (props.type || '').toString().toLowerCase();
+                    // If this feature represents a bbox image and the returned layer is a LayerGroup, create the image overlay inside it
+                    if ((tprop === 'image_bbox' || (tprop === 'image' && props.bounds)) && layer && typeof layer.addLayer === 'function') {
+                      try {
+                        var b = props.bounds;
+                        if (b && Array.isArray(b) && b.length === 2 && props.url) {
+                          var ov = L.imageOverlay(props.url, b, { interactive: true });
+                          layer.addLayer(ov);
+                          layer._imageOverlay = ov;
+                          try { ov.bindPopup(makeEntityPopupHtml(props), popupOptions); } catch(e){}
+                        }
+                      } catch(e) { console.log('timeline image_bbox onEachFeature error', e); }
+                      return;
+                    }
+                  } catch(e){}
+                  try { var base = Number((feature.properties && (feature.properties.line_weight || feature.properties.lineWeight)) || 2); try { layer.options._baseWeight = base; } catch(e){} var popupContent = makeEntityPopupHtml(feature.properties); layer.bindPopup(popupContent, popupOptions); } catch(e) { layer.bindPopup('<h3>' + (feature.properties && feature.properties.name||'') + '</h3>', popupOptions); }
+                },
+                getInterval: function(feature) { const s2 = Number(feature.properties.startYear); const e2 = Number(feature.properties.endYear); const start = Number.isFinite(s2) ? yearToMillis(s2) : null; const end = Number.isFinite(e2) ? yearToMillis(e2) + (365*24*60*60*1000 - 1) : (start || null); return start && end ? [start, end] : null; }
+              });
+              timeline_landmarks_count = timelineFeatures.length;
+              // add to map depending on zoom (consistent with towns)
+              if (map.getZoom() >= 4) timeline_landmarks.addTo(map);
+            } else {
+              pendingTimelineFeatures.landmarks = timelineFeatures;
+              timeline_landmarks_count = timelineFeatures.length;
+              console.log('timeline plugin not present yet — deferring landmarks timeline creation');
+            }
+          } else {
+            timeline_landmarks_count = 0;
+          }
+        } catch (error) {
+          console.log('Could not get Landmarks data', error);
+        }
+      }
+
+      // Function to pull the data from the google sheet parties page and create markers
+      async function getParties() {
+        // user-provided parties sheet webapp
+        let url = 'https://script.google.com/macros/s/AKfycbx-8Yu714vW2OqMxlWr0ESIF4BufhTHRzUr-1-oHIrLhb14uDudHv20nRPLmehKgI0z/exec';
+        try {
+          let response = await fetch(url);
+          const data = await response.json();
+          console.log('getParties: loaded', data && data.length, 'items');
+
+          const timelineFeatures = [];
+
+          for (let i = 0; i < (data || []).length; i++) {
+            const item = data[i];
+            try {
+              if (!item) continue;
+              const name = item.name || item.Name || item.title || '';
+              const description = item.description || item.Description || item.desc || '';
+              const color = item.color || item.Color || null;
+              const icon = item.icon || item.Icon || null;
+              // lat/lon provided as separate columns
+              const lat = parseFloat(item.lat || item.Lat || item.latitude || item.Latitude);
+              const lon = parseFloat(item.lon || item.Lon || item.longitude || item.Longitude);
+
+              // Read years robustly
+              let rawStart = readYearProp(item, 'startYear');
+              let rawEnd = readYearProp(item, 'endYear');
+              if (rawStart == null) rawStart = findYearField(item, 'start');
+              if (rawEnd == null) rawEnd = findYearField(item, 'end');
+              const startYear = parseYear(rawStart);
+              const endYear = parseYear(rawEnd != null ? rawEnd : rawStart);
+
+              if (Number.isFinite(startYear)) timelineMinYear = Math.min(timelineMinYear, startYear);
+              if (Number.isFinite(endYear)) timelineMaxYear = Math.max(timelineMaxYear, endYear);
+
+              if ((Number.isFinite(startYear) || Number.isFinite(endYear)) && Number.isFinite(lat) && Number.isFinite(lon)) {
+                // timeline-managed point
+                timelineFeatures.push({
+                  type: 'Feature',
+                  geometry: { type: 'Point', coordinates: [lon, lat] },
+                  properties: { name: name, description: description, url: item.url || item.Url || null, color: color, icon: icon, startYear: startYear, endYear: endYear }
+                });
+                // add invisible search marker so Control.Search can find it and we can jump timeline
+                try {
+                  var sm = L.marker([lat, lon], { title: name || '', interactive: false, opacity: 0 });
+                  sm.feature = { properties: { name: name, description: description, url: item.url || item.Url || null, startYear: startYear, endYear: endYear } };
+                  searchLayer.addLayer(sm);
+                } catch(e) {}
+              } else if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                // static marker
+                var mk = L.marker([lat, lon], { icon: iconMap[icon] || iconMap['town'], title: name });
+                try { mk.bindPopup(makeEntityPopupHtml(item), popupOptions); } catch(e){ mk.bindPopup('<h3>' + name + '</h3>', popupOptions); }
+                lg_parties.addLayer(mk);
+                try { var sM = L.marker([lat, lon], { title: name || '', interactive: false, opacity: 0 }); sM.feature = { properties: { name: name } }; searchLayer.addLayer(sM); } catch(e){}
+              }
+            } catch (e) { console.log('getParties row error', e); }
+          }
+
+          if (timelineFeatures.length > 0) {
+            if (typeof L !== 'undefined' && typeof L.timeline === 'function') {
+              timeline_parties = L.timeline({ type: 'FeatureCollection', features: timelineFeatures }, {
+                pointToLayer: function(feature, latlng) { const icon = iconMap[feature.properties.icon] || iconMap['town']; return L.marker(latlng, { icon: icon, title: feature.properties.name }); },
+                onEachFeature: function(feature, layer) { try { var base = Number((feature.properties && (feature.properties.line_weight || feature.properties.lineWeight)) || 2); try { layer.options._baseWeight = base; } catch(e){} var popupContent = makeEntityPopupHtml(feature.properties); layer.bindPopup(popupContent, popupOptions); } catch(e) { layer.bindPopup('<h3>' + (feature.properties && feature.properties.name||'') + '</h3>', popupOptions); } },
+                getInterval: function(feature) { const s2 = Number(feature.properties.startYear); const e2 = Number(feature.properties.endYear); const start = Number.isFinite(s2) ? yearToMillis(s2) : null; const end = Number.isFinite(e2) ? yearToMillis(e2) + (365*24*60*60*1000 - 1) : (start || null); return start && end ? [start, end] : null; }
+              });
+              timeline_parties_count = timelineFeatures.length;
+              // add to map only at higher zoom by default (consistent with towns/landmarks)
+              if (map.getZoom() >= 4) timeline_parties.addTo(map);
+            } else {
+              pendingTimelineFeatures.parties = timelineFeatures;
+              timeline_parties_count = timelineFeatures.length;
+              console.log('timeline plugin not present yet — deferring parties timeline creation');
+            }
+          } else {
+            timeline_parties_count = 0;
+          }
+        } catch (error) {
+          console.log('Could not get Parties data', error);
+        }
+      }
+
       // Run the above function
-          Promise.all([getTowns(), getNations(), getStates(), getRoads()]).then(function() {
+          Promise.all([getTowns(), getNations(), getStates(), getRoads(), getLandmarks(), getParties()]).then(function() {
         // Create layer controls now that timelines may exist
         // Replace overlays with timeline layers where available
         // For layer control we use the static layerGroups (lg_*) — timeline layers may not be Leaflet Layer instances
         var overlays = {
           "Overworld Locations": lg_towns,
+          "Parties": lg_parties,
           "Nations": lg_nations,
           "States": lg_states,
-          "Roads": lg_roads
+          "Roads": lg_roads,
+          "Landmarks": lg_landmarks
         }
 
         if (window.layercontrols) {
@@ -1037,7 +1605,7 @@
 
         // Add a timeline slider control if available
         // If the external timeline slider control plugin is not available, create a built-in control at the bottom
-        console.log('Timeline counts:', {towns: timeline_towns_count, nations: timeline_nations_count, states: timeline_states_count, roads: timeline_roads_count});
+  console.log('Timeline counts:', {towns: timeline_towns_count, nations: timeline_nations_count, states: timeline_states_count, roads: timeline_roads_count, landmarks: timeline_landmarks_count});
         console.log('Timeline year range:', {min: timelineMinYear, max: timelineMaxYear});
 
         if (typeof L.timelineSliderControl !== 'undefined' && hasTimelineData) {
@@ -1050,6 +1618,8 @@
           if (timeline_nations) timelineControl.addTimelines(timeline_nations);
           if (timeline_states) timelineControl.addTimelines(timeline_states);
           if (timeline_roads) timelineControl.addTimelines(timeline_roads);
+          if (timeline_landmarks) timelineControl.addTimelines(timeline_landmarks);
+          if (timeline_parties) timelineControl.addTimelines(timeline_parties);
         } 
         // always create a bottom UI so user can see slider (disabled state if no data)
         (function createBottomUI() {
@@ -1072,11 +1642,11 @@
             document.body.appendChild(container);
           }
 
-          var hasTimelineData = (timeline_towns_count + timeline_nations_count + timeline_states_count + timeline_roads_count) > 0 && Number.isFinite(timelineMinYear) && Number.isFinite(timelineMaxYear) && timelineMinYear <= timelineMaxYear;
+          var hasTimelineData = (timeline_towns_count + timeline_parties_count + timeline_nations_count + timeline_states_count + timeline_roads_count + timeline_landmarks_count) > 0 && Number.isFinite(timelineMinYear) && Number.isFinite(timelineMaxYear) && timelineMinYear <= timelineMaxYear;
 
           if (hasTimelineData) {
-            // prefer requestedYear if present, otherwise default to timelineMinYear
-            var initialRangeValue = Number.isFinite(requestedYear) ? requestedYear : timelineMinYear;
+            // prefer requestedYear if present, otherwise default to timelineMaxYear (start at latest)
+            var initialRangeValue = Number.isFinite(requestedYear) ? requestedYear : timelineMaxYear;
             container.innerHTML = '<button id="timelinePlay">▶</button><input id="timelineRange" type="range" min="' + timelineMinYear + '" max="' + timelineMaxYear + '" value="' + initialRangeValue + '" step="1"> <span id="timelineLabel">' + initialRangeValue + '</span>';
           } else {
             container.innerHTML = '<button id="timelinePlay" disabled>▶</button><input id="timelineRange" type="range" disabled> <span id="timelineLabel">No timeline data</span>';
@@ -1108,6 +1678,7 @@
               if (timeline_nations && timeline_nations.setTime) timeline_nations.setTime(t);
               if (timeline_states && timeline_states.setTime) timeline_states.setTime(t);
               if (timeline_roads && timeline_roads.setTime) timeline_roads.setTime(t);
+              if (timeline_landmarks && timeline_landmarks.setTime) timeline_landmarks.setTime(t);
             } catch (e) { console.log('setTimelineYear setTime error', e); }
             // update UI
             try {
@@ -1205,12 +1776,12 @@
               }
             } catch (ee) { console.log('label editable attach error', ee); }
 
-            // initialize to requestedYear (if present) or min year
-            setYear(Number.isFinite(requestedYear) ? requestedYear : timelineMinYear);
+            // initialize to requestedYear (if present) or max year (start at most recent)
+            setYear(Number.isFinite(requestedYear) ? requestedYear : timelineMaxYear);
             }
           })();
           // Ensure any timeline layers created above are actually added to the map and initialized
-          try { ensureTimelinesOnMap(); } catch(e) { console.log('ensureTimelinesOnMap call error', e); }
+          try { ensureTimelinesOnMap(); try { map.fire && map.fire('zoomend'); } catch(ee){} } catch(e) { console.log('ensureTimelinesOnMap call error', e); }
         }).catch(function(e){ console.log('Error initializing timelines', e); });
 
   // Create a function that removes the towns when the zoom is to high and adds them back when the zoom level is low enough. Stops the map looking crowded when it is zoomed out.
@@ -1223,6 +1794,47 @@
           lg_towns.remove();
           if (timeline_towns && timeline_towns.remove) timeline_towns.remove();
         }
+        // Rescale static vector stroke weights so they appear consistent across zoom
+        try {
+          var currentZoom = map.getZoom();
+          // helper to update weight for a layer if it has _baseWeight
+          function rescaleLayerWeight(layer) {
+            if (!layer || !layer.options) return;
+            var base = Number(layer.options._baseWeight || layer.options.weight || 1);
+            var scaled = computeScaledLineWeight(base);
+            if (Number(scaled) && layer.setStyle) {
+              layer.setStyle({ weight: scaled });
+            }
+          }
+          // update roads
+          lg_roads.eachLayer(function(l) { try { rescaleLayerWeight(l); } catch(e){} });
+          // update landmarks
+          lg_landmarks.eachLayer(function(l) { try { rescaleLayerWeight(l); } catch(e){} });
+          // update nations/states polygons
+          lg_nations.eachLayer(function(l) { try { rescaleLayerWeight(l); } catch(e){} });
+          lg_states.eachLayer(function(l) { try { rescaleLayerWeight(l); } catch(e){} });
+          // update timeline layers inner vector weights
+          function rescaleTimeline(tl) {
+            if (!tl || !tl._featureLayers) return;
+            tl._featureLayers.forEach(function(fl) {
+              try {
+                var inner = (fl.layer && typeof fl.layer.getLayers === 'function') ? fl.layer.getLayers() : [];
+                inner.forEach(function(il) {
+                  try {
+                    // prefer an explicitly stored base on the inner layer (from static creation or onEachFeature)
+                    var base = Number((il && il.options && (il.options._baseWeight || il.options.weight)) || (fl.feature && fl.feature.properties && (fl.feature.properties.line_weight || fl.feature.properties.lineWeight)) || 2);
+                    var scaled = computeScaledLineWeight(base);
+                    if (il && il.setStyle) il.setStyle({ weight: scaled });
+                  } catch(e){}
+                });
+              } catch(e){}
+            });
+          }
+          rescaleTimeline(timeline_roads);
+          rescaleTimeline(timeline_landmarks);
+          rescaleTimeline(timeline_states);
+          rescaleTimeline(timeline_nations);
+        } catch (e) { console.log('zoom rescale error', e); }
       });
 
       // Add Layer Control bar to the side using the baselays and overlays determined above
@@ -1376,6 +1988,7 @@
                 if (timeline_nations && timeline_nations.setTime) timeline_nations.setTime(t);
                 if (timeline_states && timeline_states.setTime) timeline_states.setTime(t);
                 if (timeline_roads && timeline_roads.setTime) timeline_roads.setTime(t);
+                if (timeline_landmarks && timeline_landmarks.setTime) timeline_landmarks.setTime(t);
                 try {
                   var rangeEl2 = document.getElementById('timelineRange');
                   var labelEl2 = document.getElementById('timelineLabel');
@@ -1401,19 +2014,24 @@
 
       function makePopupContent(feature) {
         var coordinates = feature.geometry.coordinates;
-        var wrappedCoordinates = '';
-
-        if (Array.isArray(coordinates)) {
-          for (var i = 0; i < coordinates.length; i++) {
-            var coordinate = coordinates[i];
-            var wrappedCoordinate = coordinate.join(', ');
-            wrappedCoordinates += wrappedCoordinate + ' ';
+        // Flatten coordinate arrays into a single list of numeric strings and join with commas.
+        // This ensures pairs are separated by a comma as well: "lat, lon, lat2, lon2, ..."
+        var parts = [];
+        function pushCoords(c) {
+          if (!Array.isArray(c)) return;
+          // If this is an array of numbers (a single coordinate), push them
+          if (typeof c[0] === 'number') {
+            parts.push(String(c[0]));
+            if (typeof c[1] !== 'undefined') parts.push(String(c[1]));
+            return;
           }
-        } else {
-          wrappedCoordinates = coordinates.join(', ');
+          // Otherwise iterate nested arrays
+          for (var i = 0; i < c.length; i++) {
+            pushCoords(c[i]);
+          }
         }
-
-        return '<span>' + wrappedCoordinates + '</span>';
+        pushCoords(coordinates);
+        return '<span>' + parts.join(', ') + '</span>';
       }
 
       function setPopup(layer) {
@@ -1442,8 +2060,12 @@
       function makeEntityPopupHtml(props) {
         props = props || {};
         var parts = [];
-        // Name first (centered)
-        parts.push('<h3 style="margin:0 0 6px 0;text-align:center;">' + (props.name || '') + '</h3>');
+  // Name first (centered) — color from sheet if present
+  var titleColor = '';
+  try { if (props && props.color) titleColor = props.color; } catch (e) { titleColor = ''; }
+  var titleStyle = 'margin:0 0 6px 0;text-align:center;';
+  if (titleColor) titleStyle += 'color:' + titleColor + ';';
+  parts.push('<h3 style="' + titleStyle + '">' + (props.name || '') + '</h3>');
         // Then image/thumbnail (if present), centered
         var thumb = props.thumbnail || props.thumb || props.url;
         if (thumb) {
