@@ -66,7 +66,7 @@
     <script type ="text/javascript" src="scripts/sidebar-v2-master/js/leaflet-sidebar.js"></script>
     <script type="text/javascript">
       // Create the tile layer that contains the images. Define the zoom levels and other options.
-      var overworld = L.tileLayer('map_v4/{z}-{x}-{y}.png', {minZoom: 0, maxZoom: 8, noWrap: true, zoomControl: false});
+      var overworld = L.tileLayer('Overworld/{z}-{x}-{y}.png', {minZoom: 0, maxZoom: 8, noWrap: true, zoomControl: false});
 
       // Create the map and set its different layers as well as its starting view location and zoom level
       var map = L.map('map', {layers: [overworld], drawControl: true, attributionControl: false}).setView([-28.098749, -108.28125], 6);
@@ -1272,6 +1272,7 @@
               // Normalize type
               var t = (item.type || item.Type || '').toString().trim().toLowerCase();
               var name = item.name || item.Name || item.title || '';
+              var desc = item.desc || item.Desc || item.description || item.Description || '';
               var color = item.color || item.Color || null;
               var icon = item.icon || item.Icon || null;
               var lw = Number(item.line_weight || item.line_weight || item.lineWeight || item.lineWeight || item.weight || 0) || 0;
@@ -1319,7 +1320,7 @@
                     timelineFeatures.push({
                       type: 'Feature',
                       geometry: { type: 'Point', coordinates: [ (bboxBounds[0][1] + bboxBounds[1][1]) / 2, (bboxBounds[0][0] + bboxBounds[1][0]) / 2 ] },
-                      properties: { name: name, url: imgUrl, type: 'image_bbox', bounds: bboxBounds, startYear: s, endYear: e }
+                      properties: { name: name, description: desc, url: imgUrl, type: 'image_bbox', bounds: bboxBounds, startYear: s, endYear: e }
                     });
                   } else {
                     // static bbox image: add image overlay to landmarks layergroup
@@ -1342,7 +1343,7 @@
                         timelineFeatures.push({
                           type: 'Feature',
                           geometry: { type: 'Point', coordinates: [lonI, latI] },
-                          properties: { name: name, url: imgUrl, type: 'image', startYear: s, endYear: e }
+                          properties: { name: name, description: desc, url: imgUrl, type: 'image', startYear: s, endYear: e }
                         });
                       } else {
                         try {
@@ -2066,19 +2067,23 @@
   var titleStyle = 'margin:0 0 6px 0;text-align:center;';
   if (titleColor) titleStyle += 'color:' + titleColor + ';';
   parts.push('<h3 style="' + titleStyle + '">' + (props.name || '') + '</h3>');
-        // Then image/thumbnail (if present), centered
-        var thumb = props.thumbnail || props.thumb || props.url;
+        // Omit inline image for image-type features; show description from `desc`/`description` instead
+        var tprop = (props.type || '').toString().toLowerCase();
+        var isImageType = (tprop && tprop.indexOf('image') === 0);
+        var thumb = (!isImageType) ? (props.thumbnail || props.thumb || props.url) : null;
         if (thumb) {
           // Make thumbnails scale to popup width and limit height relative to viewport
           parts.push('<div style="margin-bottom:6px;text-align:center;">' +
             '<img src="' + thumb + '" style="width:100%;max-width:100%;height:auto;max-height:30vh;display:inline-block;object-fit:cover;border-radius:4px;"/>' +
             '</div>');
         }
-        // Then description (justified)
-        if (props.description) {
-          parts.push('<div class="popup-desc" style="margin-top:6px;text-align:justify;">' + props.description + '</div>');
+        // Then description (justified) — prefer `description` or `desc` variants
+        var description = props.description || props.desc || props.Desc || props.Description || '';
+        if (description) {
+          parts.push('<div class="popup-desc" style="margin-top:6px;text-align:justify;">' + description + '</div>');
         }
-        if (props.url && props.url !== thumb) {
+        // For non-image features, offer a 'More info' link if a separate URL is present
+        if (!isImageType && props.url && props.url !== thumb) {
           parts.push('<div style="margin-top:6px;text-align:center;"><a href="' + props.url + '" target="_blank">More info</a></div>');
         }
         // Wrap in a scrollable container sized based on computed popupOptions.
