@@ -17,20 +17,123 @@
   <!-- If you want the plugin stylesheet locally, download leaflet.timeline.min.css into scripts/ and update this link -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet.timeline@1.2.1/dist/leaflet.timeline.min.css">
   <style>
-    /* Dark fantasy popup style */
+    /* ── Palette: Carbon Black #252422 | Panel #2e2b29 | Border #3a3734
+             Steel Blue #7a93ac | Gold #e59500 | Text #e8e4d9 | Dark #1a1814 ── */
+
+    /* ── Popup ─────────────────────────────────────────────────────── */
     .leaflet-popup-content-wrapper {
-      background: #1a1814;
-      border: 1px solid #3a3734;
-      border-radius: 4px;
-      box-shadow: 0 4px 20px rgba(0,0,0,.75);
-      color: #e8e4d9;
+      background: #1a1814; border: 1px solid #3a3734; border-radius: 4px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.75); color: #e8e4d9;
     }
     .leaflet-popup-tip { background: #1a1814; }
     .leaflet-popup-content { margin: 0; color: #e8e4d9; }
     .leaflet-popup-content a { color: #7a93ac; }
-    .leaflet-popup-close-button { color: #7a93ac !important; }
+    .leaflet-popup-close-button { color: #7a93ac !important; top: 6px !important; right: 8px !important; }
     .popup-desc { color: #c8c4bb; font-size: 12px; line-height: 1.5; }
     .route-set-btn:hover { background: #3a3734 !important; color: #e59500 !important; }
+
+    /* ── All control bars (zoom, measure, etc.) ─────────────────────── */
+    .leaflet-bar { border: 1px solid #3a3734 !important; box-shadow: 0 2px 8px rgba(0,0,0,.6) !important; }
+    .leaflet-bar a, .leaflet-bar a:first-child, .leaflet-bar a:last-child {
+      background-color: #252422 !important; color: #e8e4d9 !important;
+      border-bottom-color: #3a3734 !important;
+    }
+    .leaflet-bar a:hover { background-color: #2e2b29 !important; color: #e59500 !important; }
+    .leaflet-bar a.leaflet-disabled { color: #3a3734 !important; }
+
+    /* ── Layer control ──────────────────────────────────────────────── */
+    .leaflet-control-layers {
+      background: #252422 !important; border: 1px solid #3a3734 !important;
+      color: #e8e4d9 !important; box-shadow: 0 2px 8px rgba(0,0,0,.6) !important;
+    }
+    .leaflet-control-layers-expanded { padding: 8px 10px !important; }
+    .leaflet-control-layers label { color: #e8e4d9 !important; }
+    .leaflet-control-layers-separator { border-top-color: #3a3734 !important; }
+    .leaflet-control-layers-toggle { background-color: #252422 !important; }
+
+    /* ── Search control ─────────────────────────────────────────────── */
+    .leaflet-control-search { box-shadow: 0 2px 8px rgba(0,0,0,.6) !important; }
+    .leaflet-control-search .search-button {
+      background: #252422 !important; border: 1px solid #3a3734 !important; color: #7a93ac !important;
+    }
+    .leaflet-control-search .search-button:hover { background: #2e2b29 !important; color: #e59500 !important; }
+    .leaflet-control-search .search-input {
+      background: #1a1814 !important; color: #e8e4d9 !important; border: 1px solid #3a3734 !important;
+    }
+    .leaflet-search-list {
+      background: #1a1814 !important; border: 1px solid #3a3734 !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,.7) !important;
+    }
+    .leaflet-search-list li { color: #e8e4d9 !important; border-bottom: 1px solid #3a3734 !important; }
+    .leaflet-search-list li a { color: #e8e4d9 !important; }
+    .leaflet-search-list li:hover, .leaflet-search-list li.active {
+      background: #2e2b29 !important; color: #e59500 !important;
+    }
+    .leaflet-search-list li:hover a, .leaflet-search-list li.active a { color: #e59500 !important; }
+
+    /* ── Measure control ────────────────────────────────────────────── */
+    .leaflet-control-measure-toggle {
+      background: #252422 !important; color: #7a93ac !important;
+    }
+    .leaflet-control-measure-toggle:hover { color: #e59500 !important; background: #2e2b29 !important; }
+    .leaflet-control-measure-interaction {
+      background: #1a1814 !important; border: 1px solid #3a3734 !important;
+      color: #e8e4d9 !important; box-shadow: 0 4px 12px rgba(0,0,0,.7) !important;
+    }
+    .leaflet-control-measure-interaction .tasks button {
+      background: #2e2b29 !important; border: 1px solid #3a3734 !important;
+      color: #e8e4d9 !important; border-radius: 3px;
+    }
+    .leaflet-control-measure-interaction .tasks button:hover {
+      background: #e59500 !important; color: #252422 !important;
+    }
+    .leaflet-control-measure-result { color: #e59500 !important; font-weight: bold; }
+
+    /* ── Sidebar (leaflet-sidebar-v2) ───────────────────────────────── */
+    .sidebar { background: #1a1814 !important; border-right: 1px solid #3a3734 !important; }
+    .sidebar-tabs { background: #252422 !important; border-right: 1px solid #3a3734 !important; }
+    .sidebar-tabs > ul > li > a {
+      color: #7a93ac !important; border-bottom: 1px solid #3a3734 !important;
+    }
+    .sidebar-tabs > ul > li.active > a,
+    .sidebar-tabs > ul > li > a:hover { color: #e59500 !important; background: #2e2b29 !important; }
+    .sidebar-content { background: #1a1814 !important; }
+    .sidebar-pane { background: #1a1814 !important; color: #c8c4bb !important; }
+    .sidebar-pane p { color: #c8c4bb; line-height: 1.6; }
+    .sidebar-pane b, .sidebar-pane strong { color: #e8e4d9; }
+    .sidebar-header {
+      background: #252422 !important; color: #e59500 !important;
+      border-bottom: 1px solid #3a3734 !important; font-weight: 600; letter-spacing: 0.5px;
+    }
+    .sidebar-close { color: #7a93ac !important; }
+    .sidebar-close:hover { color: #e59500 !important; }
+
+    /* ── Timeline slider (dynamically created) ──────────────────────── */
+    #timeline-bottom-container {
+      background: rgba(26,24,20,0.95) !important; border: 1px solid #3a3734 !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,.6) !important; color: #e8e4d9 !important;
+    }
+    #timelinePlay {
+      background: #2e2b29 !important; border: 1px solid #3a3734 !important;
+      color: #e59500 !important; border-radius: 3px; padding: 2px 8px; cursor: pointer; font-size: 13px;
+    }
+    #timelinePlay:hover { background: #e59500 !important; color: #252422 !important; }
+    #timelinePlay:disabled { color: #3a3734 !important; cursor: default !important; }
+    #timelineLabel { color: #e59500 !important; font-weight: bold; min-width: 40px; text-align: center; }
+    #timelineRange { accent-color: #e59500; }
+    #timelineYearInput {
+      background: #1a1814 !important; border: 1px solid #3a3734 !important;
+      color: #e59500 !important; border-radius: 4px;
+    }
+
+    /* ── Geoman draw toolbar ────────────────────────────────────────── */
+    .leaflet-pm-toolbar .button-container button {
+      background: #252422 !important; color: #7a93ac !important; border: 1px solid #3a3734 !important;
+    }
+    .leaflet-pm-toolbar .button-container button:hover,
+    .leaflet-pm-toolbar .button-container button.active {
+      background: #2e2b29 !important; color: #e59500 !important;
+    }
   </style>
   </head>
   <body style="height: 100%; margin: 0;">
@@ -77,7 +180,7 @@
         </div>
       </div>
     </div>
-    <div id="map" style="width: 100%; height: 100%; background: #888888; margin: 0"></div>
+    <div id="map" style="width: 100%; height: 100%; background: #1a1814; margin: 0"></div>
     </div>
     <!-- Travel Planner panel -->
     <div id="route-planner" style="
