@@ -16,6 +16,22 @@
   <script src="scripts/leaflet.timeline.min.js"></script>
   <!-- If you want the plugin stylesheet locally, download leaflet.timeline.min.css into scripts/ and update this link -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet.timeline@1.2.1/dist/leaflet.timeline.min.css">
+  <style>
+    /* Dark fantasy popup style */
+    .leaflet-popup-content-wrapper {
+      background: #1a1814;
+      border: 1px solid #3a3734;
+      border-radius: 4px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.75);
+      color: #e8e4d9;
+    }
+    .leaflet-popup-tip { background: #1a1814; }
+    .leaflet-popup-content { margin: 0; color: #e8e4d9; }
+    .leaflet-popup-content a { color: #7a93ac; }
+    .leaflet-popup-close-button { color: #7a93ac !important; }
+    .popup-desc { color: #c8c4bb; font-size: 12px; line-height: 1.5; }
+    .route-set-btn:hover { background: #3a3734 !important; color: #e59500 !important; }
+  </style>
   </head>
   <body style="height: 100%; margin: 0;">
     <div id="sidebar" class="sidebar collapsed">
@@ -63,6 +79,64 @@
     </div>
     <div id="map" style="width: 100%; height: 100%; background: #888888; margin: 0"></div>
     </div>
+    <!-- Travel Planner panel -->
+    <div id="route-planner" style="
+        position:fixed; bottom:60px; right:10px; z-index:9998;
+        background:rgba(26,24,20,0.96); border:1px solid #3a3734;
+        border-radius:6px; box-shadow:0 4px 20px rgba(0,0,0,0.75);
+        font-family:'Segoe UI',sans-serif; font-size:12px; color:#e8e4d9;
+        min-width:230px; max-width:270px;">
+      <div id="route-header" style="
+          padding:7px 10px; display:flex; justify-content:space-between; align-items:center;
+          border-bottom:1px solid #3a3734; cursor:pointer; user-select:none;"
+          onclick="toggleRoutePlanner()">
+        <span style="color:#e59500;font-size:11px;font-weight:bold;letter-spacing:1.5px;">TRAVEL PLANNER</span>
+        <span id="route-toggle" style="color:#7a93ac;font-size:11px;">&#9660;</span>
+      </div>
+      <div id="route-body" style="padding:9px 10px;">
+        <div style="margin-bottom:7px;">
+          <div style="color:#7a93ac;font-size:10px;letter-spacing:1px;margin-bottom:2px;">FROM</div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span id="route-from-name" style="flex:1;color:#e8e4d9;font-size:12px;">--</span>
+            <button onclick="clearRouteFrom()" title="Clear" style="background:none;border:none;color:#5a5650;cursor:pointer;font-size:13px;padding:0 3px;line-height:1;">&#10005;</button>
+          </div>
+        </div>
+        <div style="margin-bottom:7px;">
+          <div style="color:#7a93ac;font-size:10px;letter-spacing:1px;margin-bottom:2px;">TO</div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span id="route-to-name" style="flex:1;color:#e8e4d9;font-size:12px;">--</span>
+            <button onclick="clearRouteTo()" title="Clear" style="background:none;border:none;color:#5a5650;cursor:pointer;font-size:13px;padding:0 3px;line-height:1;">&#10005;</button>
+          </div>
+        </div>
+        <div style="height:1px;background:#3a3734;margin:6px 0;"></div>
+        <div style="margin-bottom:5px;">
+          <div style="color:#7a93ac;font-size:10px;letter-spacing:1px;margin-bottom:3px;">ROAD TYPE</div>
+          <label style="margin-right:7px;cursor:pointer;"><input type="radio" name="route-type" value="land" checked onchange="if(_routeFromPt&&_routeToPt)calculateRoute()"> Land</label>
+          <label style="margin-right:7px;cursor:pointer;"><input type="radio" name="route-type" value="sea" onchange="if(_routeFromPt&&_routeToPt)calculateRoute()"> Sea</label>
+          <label style="cursor:pointer;"><input type="radio" name="route-type" value="mixed" onchange="if(_routeFromPt&&_routeToPt)calculateRoute()"> Mixed</label>
+        </div>
+        <div style="margin-bottom:7px;">
+          <div style="color:#7a93ac;font-size:10px;letter-spacing:1px;margin-bottom:3px;">PACE (land)</div>
+          <label style="margin-right:7px;cursor:pointer;"><input type="radio" name="route-pace" value="normal" checked onchange="if(_routeFromPt&&_routeToPt)calculateRoute()"> Normal</label>
+          <label style="margin-right:7px;cursor:pointer;"><input type="radio" name="route-pace" value="slow" onchange="if(_routeFromPt&&_routeToPt)calculateRoute()"> Slow</label>
+          <label style="cursor:pointer;"><input type="radio" name="route-pace" value="fast" onchange="if(_routeFromPt&&_routeToPt)calculateRoute()"> Fast</label>
+        </div>
+        <div id="route-result" style="display:none;border-top:1px solid #3a3734;padding-top:7px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+            <span style="color:#9a968f;">Distance</span>
+            <span><span id="route-miles" style="color:#e59500;font-weight:bold;">--</span><span style="color:#9a968f;"> mi</span></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span style="color:#9a968f;">Travel time</span>
+            <span><span id="route-days" style="color:#e59500;font-weight:bold;">--</span><span style="color:#9a968f;"> days</span></span>
+          </div>
+        </div>
+        <div style="margin-top:7px;color:#4a4640;font-size:10px;text-align:center;line-height:1.4;">
+          Use "Set as From / To" buttons<br>in any location popup
+        </div>
+      </div>
+    </div>
+
     <script type ="text/javascript" src="scripts/sidebar-v2-master/js/leaflet-sidebar.js"></script>
     <script type="text/javascript">
       // Create the tile layer that contains the images. Define the zoom levels and other options.
@@ -440,6 +514,10 @@
   window.MAP_DEBUG = window.MAP_DEBUG || false;
   function debugLog() { if (window.MAP_DEBUG) { try { console.log.apply(console, arguments); } catch (e) {} } }
 
+  // Kanka static JSON (populated by _loadMapDataJson before any fetch function runs)
+  var _mapData = null;
+  var _roadGraph = null;
+
   // Global helper: set the timeline to a given year (integer). Optionally call cb() after updating.
   function setTimelineYear(year, cb) {
     if (!Number.isFinite(Number(year))) return;
@@ -780,12 +858,26 @@
       }
       window.addEventListener('resize', updateResponsiveUI);
 
-  // Function to pull the data from the google sheet towns page and create the markers from there.
-      async function getTowns() {
-        let url = 'https://script.google.com/macros/s/AKfycbzSbU-10nUV-odUN1kUZLquAa5olKwfa9vR5791-DJeSbz3lpEkKzJtCdtdIxC7RWPmqg/exec';
+  // Load towns and roads from Kanka-sourced static JSON (data/map_data.json).
+      async function _loadMapDataJson() {
         try {
-          let response = await fetch(url);
-          const data = await response.json();
+          var results = await Promise.all([
+            fetch('data/map_data.json').then(function(r){ return r.json(); }),
+            fetch('data/road_graph.json').then(function(r){ return r.json(); })
+          ]);
+          _mapData = results[0];
+          _roadGraph = results[1];
+          console.log('_loadMapDataJson: locations', (_mapData.locations||[]).length, 'roads', (_mapData.roads||[]).length);
+        } catch(e) {
+          console.log('_loadMapDataJson error', e);
+          _mapData = {locations: [], roads: []};
+          _roadGraph = {nodes: [], edges: []};
+        }
+      }
+
+      async function getTowns() {
+        try {
+          const data = (_mapData && _mapData.locations) || [];
 
           console.log('getTowns: loaded', data && data.length, 'items');
           if (data && data.length > 0) {
@@ -822,7 +914,12 @@
                 geometry: { type: 'Point', coordinates: [lng, lat] },
                 properties: {
                   name: item.name,
+                  lat: lat,
+                  lon: lng,
                   description: item.description,
+                  image_url: item.image_url || '',
+                  entry_html: item.entry_html || '',
+                  kanka_url: item.kanka_url || '',
                   url: item.url,
                   color: item.color,
                   icon: item.icon,
@@ -833,8 +930,7 @@
               // add an invisible search marker so Control.Search can find this town later
               try {
                 var sMarker = L.marker([lat, lng], { title: item.name || '', interactive: false, opacity: 0 });
-                // store properties including timeline years so search selection can jump timeline
-                sMarker.feature = { properties: { name: item.name, description: item.description, url: item.url, startYear: startYear, endYear: endYear } };
+                sMarker.feature = { properties: { name: item.name, lat: lat, lon: lng, image_url: item.image_url || '', entry_html: item.entry_html || '', kanka_url: item.kanka_url || '', description: item.description, url: item.url, startYear: startYear, endYear: endYear } };
                 searchLayer.addLayer(sMarker);
                 
               } catch (e) { console.log('search marker create error', e); }
@@ -1152,10 +1248,8 @@
 
       // Function to pull the data from the google sheet roads page and create the polylines from there.
       async function getRoads() {
-        let url = 'https://script.google.com/macros/s/AKfycbzkUU1f0NlWKuCRou6Rlfi5okoKGiHxvrFFviLVrc3zNMd_WSwMSr5JbK-xrQgToRPTbQ/exec';
         try {
-          let response = await fetch(url);
-          const data = await response.json();
+          const data = (_mapData && _mapData.roads) || [];
 
           console.log('getRoads: loaded', data && data.length, 'items');
             if (data && data.length > 0) {
@@ -1584,8 +1678,10 @@
         }
       }
 
-      // Run the above function
-          Promise.all([getTowns(), getNations(), getStates(), getRoads(), getLandmarks(), getParties()]).then(function() {
+      // Run the above functions — load Kanka JSON first, then process all layers
+          _loadMapDataJson().then(function() {
+            return Promise.all([getTowns(), getNations(), getStates(), getRoads(), getLandmarks(), getParties()]);
+          }).then(function() {
         // Create layer controls now that timelines may exist
         // Replace overlays with timeline layers where available
         // For layer control we use the static layerGroups (lg_*) — timeline layers may not be Leaflet Layer instances
@@ -2057,39 +2153,249 @@
         layer.bindPopup(popupContent, popupOptions);
       }
 
-      // Build popup HTML for nations/states from properties (graceful when optional fields are missing)
+      // Build popup HTML for all entity types (towns, nations, landmarks, roads).
+      // Supports both legacy sheet fields and new Kanka fields (image_url, entry_html, kanka_url).
       function makeEntityPopupHtml(props) {
         props = props || {};
         var parts = [];
-  // Name first (centered) — color from sheet if present
-  var titleColor = '';
-  try { if (props && props.color) titleColor = props.color; } catch (e) { titleColor = ''; }
-  var titleStyle = 'margin:0 0 6px 0;text-align:center;';
-  if (titleColor) titleStyle += 'color:' + titleColor + ';';
-  parts.push('<h3 style="' + titleStyle + '">' + (props.name || '') + '</h3>');
-        // Omit inline image for image-type features; show description from `desc`/`description` instead
+        var titleColor = '';
+        try { if (props && props.color) titleColor = props.color; } catch (e) { titleColor = ''; }
+        var titleStyle = 'margin:0 0 6px 0;text-align:center;font-size:15px;font-weight:600;letter-spacing:0.5px;';
+        if (titleColor) titleStyle += 'color:' + titleColor + ';';
+        parts.push('<h3 style="' + titleStyle + '">' + (props.name || '') + '</h3>');
+
         var tprop = (props.type || '').toString().toLowerCase();
         var isImageType = (tprop && tprop.indexOf('image') === 0);
-        var thumb = (!isImageType) ? (props.thumbnail || props.thumb || props.url) : null;
-        if (thumb) {
-          // Make thumbnails scale to popup width and limit height relative to viewport
-          parts.push('<div style="margin-bottom:6px;text-align:center;">' +
-            '<img src="' + thumb + '" style="width:100%;max-width:100%;height:auto;max-height:30vh;display:inline-block;object-fit:cover;border-radius:4px;"/>' +
+
+        // Hero image: prefer Kanka image_url, then legacy thumbnail/thumb
+        var heroImg = (!isImageType) ? (props.image_url || props.thumbnail || props.thumb || null) : null;
+        if (heroImg) {
+          parts.push('<div style="margin-bottom:6px;">' +
+            '<img src="' + heroImg + '" style="width:100%;max-width:100%;height:auto;max-height:28vh;display:block;object-fit:cover;border-radius:4px;"/>' +
             '</div>');
         }
-        // Then description (justified) — prefer `description` or `desc` variants
-        var description = props.description || props.desc || props.Desc || props.Description || '';
+
+        // Description: prefer Kanka entry_html, then legacy description/desc
+        var description = props.entry_html || props.description || props.desc || props.Desc || props.Description || '';
         if (description) {
           parts.push('<div class="popup-desc" style="margin-top:6px;text-align:justify;">' + description + '</div>');
         }
-        // For non-image features, offer a 'More info' link if a separate URL is present
-        if (!isImageType && props.url && props.url !== thumb) {
-          parts.push('<div style="margin-top:6px;text-align:center;"><a href="' + props.url + '" target="_blank">More info</a></div>');
+
+        // Links row
+        var linkParts = [];
+        if (props.kanka_url) {
+          linkParts.push('<a href="' + props.kanka_url + '" target="_blank" style="color:#7a93ac;font-size:11px;">View in Kanka &#8594;</a>');
+        } else if (!isImageType && props.url && props.url !== heroImg) {
+          linkParts.push('<a href="' + props.url + '" target="_blank" style="font-size:11px;">More info</a>');
         }
-        // Wrap in a scrollable container sized based on computed popupOptions.
-        // Use a fallback of 70vh if popupOptions.maxHeight is unexpectedly small.
+        if (linkParts.length) {
+          parts.push('<div style="margin-top:6px;text-align:center;">' + linkParts.join(' &bull; ') + '</div>');
+        }
+
+        // Route buttons (only when lat/lon are stored on the props — point locations)
+        var rLat = Number(props.lat), rLon = Number(props.lon);
+        if (Number.isFinite(rLat) && Number.isFinite(rLon)) {
+          var safeName = (props.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          parts.push(
+            '<div style="margin-top:8px;display:flex;gap:6px;justify-content:center;">' +
+            '<button class="route-set-btn" onclick="setRouteFrom(' + rLat + ',' + rLon + ',\'' + safeName + '\')" ' +
+              'style="background:#2e2b29;border:1px solid #3a3734;color:#c8c4bb;font-size:11px;padding:3px 8px;border-radius:3px;cursor:pointer;">Set as From</button>' +
+            '<button class="route-set-btn" onclick="setRouteTo(' + rLat + ',' + rLon + ',\'' + safeName + '\')" ' +
+              'style="background:#2e2b29;border:1px solid #3a3734;color:#c8c4bb;font-size:11px;padding:3px 8px;border-radius:3px;cursor:pointer;">Set as To</button>' +
+            '</div>'
+          );
+        }
+
         var maxH = popupOptions && popupOptions.maxHeight ? popupOptions.maxHeight : Math.floor((window.innerHeight||600) * 0.7);
-        return '<div style="max-height:' + (maxH) + 'px;overflow:auto;padding:6px;box-sizing:border-box;">' + parts.join('') + '</div>';
+        return '<div style="max-height:' + maxH + 'px;overflow:auto;padding:8px 10px;box-sizing:border-box;">' + parts.join('') + '</div>';
+      }
+
+      // -----------------------------------------------------------------------
+      // Travel Planner — client-side Dijkstra routing on the road graph
+      // -----------------------------------------------------------------------
+
+      // Scale factor matching the measurement plugin's formatDistance:
+      //   miles = leaflet_meters * 1000 / (1609.344 * 6500)
+      var COORD_TO_MILES = 1000 / (1609.344 * 6500);
+      var LAND_SPEEDS = { slow: 18, normal: 24, fast: 30 };
+      var SEA_SPEED = 80;
+
+      var _routeFromPt = null;  // {lat, lon, name}
+      var _routeToPt   = null;
+      var _routePolyline = null;
+
+      function setRouteFrom(lat, lon, name) {
+        _routeFromPt = {lat: lat, lon: lon, name: name};
+        var el = document.getElementById('route-from-name');
+        if (el) el.textContent = name;
+        _openRoutePlanner();
+        if (_routeToPt) calculateRoute();
+      }
+
+      function setRouteTo(lat, lon, name) {
+        _routeToPt = {lat: lat, lon: lon, name: name};
+        var el = document.getElementById('route-to-name');
+        if (el) el.textContent = name;
+        _openRoutePlanner();
+        if (_routeFromPt) calculateRoute();
+      }
+
+      function clearRouteFrom() {
+        _routeFromPt = null;
+        var el = document.getElementById('route-from-name');
+        if (el) el.textContent = '--';
+        _clearRouteDisplay();
+      }
+
+      function clearRouteTo() {
+        _routeToPt = null;
+        var el = document.getElementById('route-to-name');
+        if (el) el.textContent = '--';
+        _clearRouteDisplay();
+      }
+
+      function _clearRouteDisplay() {
+        if (_routePolyline) { try { map.removeLayer(_routePolyline); } catch(e){} _routePolyline = null; }
+        var el = document.getElementById('route-result');
+        if (el) el.style.display = 'none';
+      }
+
+      function toggleRoutePlanner() {
+        var body = document.getElementById('route-body');
+        var tog  = document.getElementById('route-toggle');
+        if (!body) return;
+        var collapsed = body.style.display === 'none';
+        body.style.display = collapsed ? '' : 'none';
+        if (tog) tog.textContent = collapsed ? '▼' : '▶';
+      }
+
+      function _openRoutePlanner() {
+        var body = document.getElementById('route-body');
+        var tog  = document.getElementById('route-toggle');
+        if (body) body.style.display = '';
+        if (tog)  tog.textContent = '▼';
+      }
+
+      function _nearestNode(graph, lat, lon, allowedTypes) {
+        if (!graph || !graph.nodes || graph.nodes.length === 0) return null;
+        // Build set of node IDs reachable via allowed road types
+        var reachable = {};
+        if (graph.edges) {
+          graph.edges.forEach(function(e) {
+            if (!allowedTypes || allowedTypes.indexOf(e.road_type) !== -1) {
+              reachable[e.from] = true;
+              reachable[e.to]   = true;
+            }
+          });
+        }
+        var best = null, bestDist = Infinity;
+        graph.nodes.forEach(function(node) {
+          if (Object.keys(reachable).length > 0 && !reachable[node.id]) return;
+          var dlat = node.lat - lat, dlon = node.lon - lon;
+          var d = Math.sqrt(dlat * dlat + dlon * dlon);
+          if (d < bestDist) { bestDist = d; best = node; }
+        });
+        return best;
+      }
+
+      function _dijkstra(graph, startId, endId, allowedTypes) {
+        if (!graph || !graph.nodes || !graph.edges) return null;
+        // Build adjacency list
+        var adj = {};
+        graph.nodes.forEach(function(n) { adj[n.id] = []; });
+        graph.edges.forEach(function(e) {
+          if (allowedTypes && allowedTypes.indexOf(e.road_type) === -1) return;
+          adj[e.from] = adj[e.from] || [];
+          adj[e.to]   = adj[e.to]   || [];
+          adj[e.from].push({id: e.to,   dist: e.distance});
+          adj[e.to].push(  {id: e.from, dist: e.distance});
+        });
+
+        var dist = {}, prev = {}, visited = {};
+        graph.nodes.forEach(function(n) { dist[n.id] = Infinity; prev[n.id] = null; });
+        dist[startId] = 0;
+
+        // Min-heap would be faster but array sort is fine for typical road graph sizes
+        var queue = graph.nodes.map(function(n){ return n.id; });
+        while (queue.length > 0) {
+          queue.sort(function(a, b){ return dist[a] - dist[b]; });
+          var u = queue.shift();
+          if (visited[u]) continue;
+          visited[u] = true;
+          if (u === endId) break;
+          if (!Number.isFinite(dist[u]) || dist[u] === Infinity) break;
+          (adj[u] || []).forEach(function(edge) {
+            if (visited[edge.id]) return;
+            var alt = dist[u] + edge.dist;
+            if (alt < dist[edge.id]) { dist[edge.id] = alt; prev[edge.id] = u; }
+          });
+        }
+
+        if (!Number.isFinite(dist[endId]) || dist[endId] === Infinity) return null;
+        var path = [], cur = endId;
+        while (cur !== null) { path.unshift(cur); cur = prev[cur]; }
+        return {path: path, totalDistance: dist[endId]};
+      }
+
+      function calculateRoute() {
+        if (!_routeFromPt || !_routeToPt) return;
+        if (!_roadGraph || !_roadGraph.nodes || _roadGraph.nodes.length === 0) {
+          var el = document.getElementById('route-result');
+          if (el) { el.style.display = ''; el.querySelector('#route-miles').textContent = '(no road data yet)'; }
+          return;
+        }
+        _clearRouteDisplay();
+
+        var roadTypeVal = 'land';
+        try {
+          document.querySelectorAll('input[name="route-type"]').forEach(function(i){ if (i.checked) roadTypeVal = i.value; });
+        } catch(e){}
+        var allowedTypes = roadTypeVal === 'mixed' ? ['land', 'sea'] : [roadTypeVal];
+
+        var startNode = _nearestNode(_roadGraph, _routeFromPt.lat, _routeFromPt.lon, allowedTypes);
+        var endNode   = _nearestNode(_roadGraph, _routeToPt.lat,   _routeToPt.lon,   allowedTypes);
+
+        var resultEl = document.getElementById('route-result');
+        var milesEl  = document.getElementById('route-miles');
+        var daysEl   = document.getElementById('route-days');
+
+        if (!startNode || !endNode) {
+          if (resultEl) resultEl.style.display = '';
+          if (milesEl)  milesEl.textContent = '(no road data)';
+          if (daysEl)   daysEl.textContent  = '--';
+          return;
+        }
+
+        var result = _dijkstra(_roadGraph, startNode.id, endNode.id, allowedTypes);
+        if (!result) {
+          if (resultEl) resultEl.style.display = '';
+          if (milesEl)  milesEl.textContent = '(no route found)';
+          if (daysEl)   daysEl.textContent  = '--';
+          return;
+        }
+
+        var miles = Math.round(result.totalDistance * COORD_TO_MILES);
+
+        var paceVal = 'normal';
+        try { document.querySelectorAll('input[name="route-pace"]').forEach(function(i){ if (i.checked) paceVal = i.value; }); } catch(e){}
+        var speed = (roadTypeVal === 'sea') ? SEA_SPEED : (LAND_SPEEDS[paceVal] || 24);
+        var days  = Math.round(miles / speed * 10) / 10;
+
+        if (resultEl) resultEl.style.display = '';
+        if (milesEl)  milesEl.textContent = miles;
+        if (daysEl)   daysEl.textContent  = days;
+
+        // Draw route on map
+        var nodeMap = {};
+        _roadGraph.nodes.forEach(function(n){ nodeMap[n.id] = n; });
+        var coords = result.path.map(function(id){ var n = nodeMap[id]; return n ? [n.lat, n.lon] : null; }).filter(Boolean);
+        if (coords.length >= 2) {
+          _routePolyline = L.polyline(coords, {
+            color: roadTypeVal === 'sea' ? '#4488ff' : '#e59500',
+            weight: 4, opacity: 0.85, dashArray: '10, 5'
+          }).addTo(map);
+          try { map.fitBounds(_routePolyline.getBounds(), {padding: [50, 50]}); } catch(e){}
+        }
       }
 
       map.on('pm:create', function(e) {

@@ -1,0 +1,330 @@
+"""
+Build map_data.json and road_graph.json from Kanka location entities.
+
+Usage:
+    KANKA_TOKEN=<token> python scripts/build_locations.py
+
+Reads all Kanka location entities in campaign 347078, extracts custom
+Attributes (map_lat, map_lon, map_coords, etc.), and writes:
+  data/map_data.json   — locations and roads for the Leaflet map
+  data/road_graph.json — routing graph (nodes + edges) for Dijkstra's
+
+Kanka attribute conventions (set on the entity's Attributes tab):
+  Point locations:
+    map_lat            float (required)
+    map_lon            float (required)
+    map_icon           string  e.g. "port_city"  (default: "town")
+    map_color          string  e.g. "purple"      (default: "")
+    map_plane          string  "overworld" / "underdark"  (default: "overworld")
+    map_start_year     int     (default: omitted = no timeline)
+    map_end_year       int     (default: omitted = no timeline)
+    map_type           string  "town" / "nation" / "landmark"  (default: "town")
+    map_visible_to_players  "true" / "false"  (default: "true")
+
+  Road / polyline entities:
+    map_coords         string  "lat,lon,lat,lon,..."  (required)
+    map_road_type      string  "land" / "sea"         (required)
+    map_color          string  e.g. "#8B6914"
+    map_start_year     int
+    map_end_year       int
+    map_line_weight    int  (default: 2)
+"""
+
+import json
+import math
+import os
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+import requests
+
+# ---------------------------------------------------------------------------
+# Config
+# ---------------------------------------------------------------------------
+
+CAMPAIGN = 347078
+BASE_URL = f"https://api.kanka.io/1.0/campaigns/{CAMPAIGN}"
+TOKEN = os.environ.get("KANKA_TOKEN", "")
+RATE_DELAY = 1.5           # seconds between API calls
+SNAP_TOL = 0.5             # coordinate units for endpoint snapping
+SNAP_WARN_TOL = 1.0        # flag endpoints within this distance but not snapped
+
+OUTPUT_DIR = Path(__file__).parent.parent / "data"
+
+# Colour → road_type auto-classification (hex fragments or colour names)
+# Overridden by explicit map_road_type attribute.
+SEA_COLOUR_HINTS = ["00f", "0af", "07f", "08f", "09f", "blue", "teal", "cyan", "aqua"]
+
+# ---------------------------------------------------------------------------
+# HTTP helpers
+# ---------------------------------------------------------------------------
+
+_session = requests.Session()
+_session.headers.update({"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"})
+
+
+def api_get(endpoint: str, params: dict | None = None) -> dict:
+    time.sleep(RATE_DELAY)
+    r = _session.get(f"{BASE_URL}{endpoint}", params=params or {})
+    r.raise_for_status()
+    return r.json()
+
+
+def fetch_all_locations() -> list[dict]:
+    """Return all location entities (paginated)."""
+    locations = []
+    page = 1
+    while True:
+        data = api_get("/locations", {"page": page, "per_page": 50})
+        batch = data.get("data", [])
+        locations.extend(batch)
+        links = data.get("links", {})
+        if not links.get("next"):
+            break
+        page += 1
+        print(f"  fetched page {page - 1} ({len(locations)} locations so far)")
+    return locations
+
+
+def fetch_attributes(entity_id: int) -> dict[str, str]:
+    """Return {name: value} dict for a Kanka entity's attributes."""
+    try:
+        data = api_get(f"/entities/{entity_id}/attributes")
+        return {a["name"]: str(a.get("value") or "") for a in data.get("data", [])}
+    except Exception as e:
+        print(f"    warning: could not fetch attributes for entity {entity_id}: {e}")
+        return {}
+
+
+# ---------------------------------------------------------------------------
+# Geometry helpers
+# ---------------------------------------------------------------------------
+
+def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Haversine distance in metres (treating fictional coords as lat/lon)."""
+    R = 6_371_000
+    rl1, rl2 = math.radians(lat1), math.radians(lat2)
+    drlat = math.radians(lat2 - lat1)
+    drlon = math.radians(lon2 - lon1)
+    a = math.sin(drlat / 2) ** 2 + math.cos(rl1) * math.cos(rl2) * math.sin(drlon / 2) ** 2
+    return R * 2 * math.asin(math.sqrt(a))
+
+
+def parse_coords_string(s: str) -> list[tuple[float, float]]:
+    """Parse 'lat,lon,lat,lon,...' string into [(lat,lon), ...] pairs."""
+    vals = [v.strip() for v in s.split(",")]
+    pts = []
+    for i in range(0, len(vals) - 1, 2):
+        try:
+            pts.append((float(vals[i]), float(vals[i + 1])))
+        except ValueError:
+            pass
+    return pts
+
+
+def colour_is_sea(colour: str) -> bool:
+    """Heuristically classify a colour string as sea/water."""
+    c = colour.lower().replace("#", "").replace(" ", "")
+    return any(hint in c for hint in SEA_COLOUR_HINTS)
+
+
+# ---------------------------------------------------------------------------
+# Road graph builder
+# ---------------------------------------------------------------------------
+
+def snap_or_create(pt: tuple[float, float], nodes: list[dict]) -> int:
+    """Return index of existing node within SNAP_TOL, or create new one."""
+    for i, n in enumerate(nodes):
+        if abs(n["lat"] - pt[0]) < SNAP_TOL and abs(n["lon"] - pt[1]) < SNAP_TOL:
+            return i
+    idx = len(nodes)
+    nodes.append({"id": idx, "lat": pt[0], "lon": pt[1]})
+    return idx
+
+
+def build_road_graph(roads: list[dict]) -> tuple[list[dict], list[dict], list[str]]:
+    """
+    Build nodes + edges from road coordinate chains.
+
+    Returns (nodes, edges, warnings).
+    """
+    nodes: list[dict] = []
+    edges: list[dict] = []
+    warnings: list[str] = []
+
+    for road in roads:
+        raw = road.get("coords", "")
+        if not raw:
+            continue
+        pts = parse_coords_string(raw) if isinstance(raw, str) else [(p[0], p[1]) for p in raw]
+        if len(pts) < 2:
+            warnings.append(f"Road '{road.get('name')}' has fewer than 2 coordinate points — skipped")
+            continue
+
+        start_id = snap_or_create(pts[0], nodes)
+        end_id = snap_or_create(pts[-1], nodes)
+
+        # Compute total polyline length in Haversine metres
+        total_m = sum(haversine_m(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1])
+                      for i in range(len(pts) - 1))
+
+        edges.append({
+            "from": start_id,
+            "to": end_id,
+            "distance": round(total_m, 1),
+            "road_type": road.get("road_type", "land"),
+            "road_name": road.get("name", ""),
+        })
+
+    # Connectivity report: flag endpoints that have no snap partner within 2×SNAP_TOL
+    for i, node in enumerate(nodes):
+        # Count how many edges touch this node
+        degree = sum(1 for e in edges if e["from"] == i or e["to"] == i)
+        if degree == 1:
+            # Check if any other node is within SNAP_WARN_TOL (might be an unsnapped junction)
+            close = [j for j, n in enumerate(nodes)
+                     if j != i and abs(n["lat"] - node["lat"]) < SNAP_WARN_TOL
+                     and abs(n["lon"] - node["lon"]) < SNAP_WARN_TOL]
+            if close:
+                warnings.append(
+                    f"Possible unsnapped endpoint at ({node['lat']:.4f}, {node['lon']:.4f}) "
+                    f"— {len(close)} node(s) nearby within {SNAP_WARN_TOL} units"
+                )
+
+    return nodes, edges, warnings
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def main():
+    if not TOKEN:
+        print("ERROR: KANKA_TOKEN environment variable not set.", file=sys.stderr)
+        sys.exit(1)
+
+    print("Fetching Kanka locations...")
+    raw_locations = fetch_all_locations()
+    print(f"Found {len(raw_locations)} location entities. Fetching attributes...")
+
+    locations_out = []
+    roads_out = []
+
+    for loc in raw_locations:
+        entity_id = loc.get("entity_id") or loc.get("id")
+        child = loc.get("child") or {}
+        name = loc.get("name") or child.get("name") or "Unknown"
+        loc_id = child.get("id") or loc.get("id")
+
+        print(f"  [{entity_id}] {name}")
+        attrs = fetch_attributes(entity_id)
+
+        has_point = "map_lat" in attrs and "map_lon" in attrs
+        has_road = "map_coords" in attrs
+
+        if not has_point and not has_road:
+            # No map data — skip
+            continue
+
+        # Shared fields
+        try:
+            start_year = int(attrs["map_start_year"]) if "map_start_year" in attrs else None
+        except ValueError:
+            start_year = None
+        try:
+            end_year = int(attrs["map_end_year"]) if "map_end_year" in attrs else None
+        except ValueError:
+            end_year = None
+
+        colour = attrs.get("map_color", "")
+        kanka_url = f"https://kanka.io/en-US/campaign/{CAMPAIGN}/locations/{loc_id}"
+        image_url = child.get("image_full") or child.get("image_thumb") or ""
+        entry_html = child.get("entry_parsed") or child.get("entry") or ""
+
+        if has_point:
+            try:
+                lat = float(attrs["map_lat"])
+                lon = float(attrs["map_lon"])
+            except ValueError:
+                print(f"    warning: invalid map_lat/map_lon for '{name}' — skipped")
+                continue
+
+            obj = {
+                "name": name,
+                "lat": lat,
+                "lon": lon,
+                "icon": attrs.get("map_icon", "town"),
+                "color": colour,
+                "plane": attrs.get("map_plane", "overworld"),
+                "map_type": attrs.get("map_type", "town"),
+                "image_url": image_url,
+                "entry_html": entry_html,
+                "kanka_url": kanka_url,
+                "visible_to_players": attrs.get("map_visible_to_players", "true").lower() != "false",
+            }
+            if start_year is not None:
+                obj["startYear"] = start_year
+            if end_year is not None:
+                obj["endYear"] = end_year
+            locations_out.append(obj)
+
+        if has_road:
+            coords_raw = attrs["map_coords"]
+            road_type = attrs.get("map_road_type", "")
+            if not road_type:
+                road_type = "sea" if colour_is_sea(colour) else "land"
+            try:
+                line_weight = int(attrs.get("map_line_weight", "2"))
+            except ValueError:
+                line_weight = 2
+
+            obj = {
+                "name": name,
+                "road_type": road_type,
+                "color": colour,
+                "coords": coords_raw,
+                "line_weight": line_weight,
+                "kanka_url": kanka_url,
+            }
+            if start_year is not None:
+                obj["startYear"] = start_year
+            if end_year is not None:
+                obj["endYear"] = end_year
+            roads_out.append(obj)
+
+    # Build routing graph
+    print(f"\nBuilding road graph from {len(roads_out)} road entities...")
+    nodes, edges, warnings = build_road_graph(roads_out)
+    print(f"  {len(nodes)} nodes, {len(edges)} edges")
+
+    if warnings:
+        print(f"\nConnectivity warnings ({len(warnings)}):")
+        for w in warnings:
+            print(f"  ! {w}")
+    else:
+        print("  No connectivity issues detected.")
+
+    # Write outputs
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    map_data = {
+        "generated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "locations": locations_out,
+        "roads": roads_out,
+    }
+    (OUTPUT_DIR / "map_data.json").write_text(
+        json.dumps(map_data, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    print(f"\nWrote data/map_data.json ({len(locations_out)} locations, {len(roads_out)} roads)")
+
+    road_graph = {"nodes": nodes, "edges": edges}
+    (OUTPUT_DIR / "road_graph.json").write_text(
+        json.dumps(road_graph, indent=2), encoding="utf-8"
+    )
+    print(f"Wrote data/road_graph.json ({len(nodes)} nodes, {len(edges)} edges)")
+
+
+if __name__ == "__main__":
+    main()
