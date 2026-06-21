@@ -52,24 +52,30 @@
     .leaflet-control-layers-toggle { background-color: #252422 !important; }
 
     /* ── Search control ─────────────────────────────────────────────── */
-    .leaflet-control-search { box-shadow: 0 2px 8px rgba(0,0,0,.6) !important; }
-    .leaflet-control-search .search-button {
-      background: #252422 !important; border: 1px solid #3a3734 !important; color: #7a93ac !important;
+    .leaflet-container .leaflet-control-search,
+    .leaflet-control-search {
+      background: #252422 !important; border: 1px solid #3a3734 !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,.6) !important;
     }
-    .leaflet-control-search .search-button:hover { background: #2e2b29 !important; color: #e59500 !important; }
+    .leaflet-control-search .search-button {
+      background-color: #252422 !important; border: 1px solid #3a3734 !important;
+    }
+    .leaflet-control-search .search-button:hover { background-color: #2e2b29 !important; }
     .leaflet-control-search .search-input {
       background: #1a1814 !important; color: #e8e4d9 !important; border: 1px solid #3a3734 !important;
     }
-    .leaflet-search-list {
+    .leaflet-control-search .search-tooltip {
       background: #1a1814 !important; border: 1px solid #3a3734 !important;
       box-shadow: 0 4px 12px rgba(0,0,0,.7) !important;
     }
-    .leaflet-search-list li { color: #e8e4d9 !important; border-bottom: 1px solid #3a3734 !important; }
-    .leaflet-search-list li a { color: #e8e4d9 !important; }
-    .leaflet-search-list li:hover, .leaflet-search-list li.active {
+    .leaflet-control-search .search-tip {
+      background: #252422 !important; color: #e8e4d9 !important;
+      border-bottom: 1px solid #3a3734 !important;
+    }
+    .leaflet-control-search .search-tip-select,
+    .leaflet-control-search .search-tip:hover {
       background: #2e2b29 !important; color: #e59500 !important;
     }
-    .leaflet-search-list li:hover a, .leaflet-search-list li.active a { color: #e59500 !important; }
 
     /* ── Measure control ────────────────────────────────────────────── */
     .leaflet-control-measure-toggle {
