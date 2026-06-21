@@ -49,10 +49,19 @@
     .leaflet-control-layers-expanded { padding: 8px 10px !important; }
     .leaflet-control-layers label { color: #e8e4d9 !important; }
     .leaflet-control-layers-separator { border-top-color: #3a3734 !important; }
-    /* PNG icon — filter converts dark icon to gold */
+    /* Layers toggle — dark background preserved; pseudo-element carries the icon + filter */
     .leaflet-control-layers-toggle {
       background-color: #252422 !important;
-      filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(5deg) !important;
+      background-image: none !important;
+      position: relative !important;
+    }
+    .leaflet-control-layers-toggle::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url('scripts/leaflet/images/layers.png') no-repeat center;
+      filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(5deg);
+      pointer-events: none;
     }
 
     /* ── Search control ─────────────────────────────────────────────── */
@@ -61,9 +70,22 @@
       background: #252422 !important; border: 1px solid #3a3734 !important;
       box-shadow: 0 2px 8px rgba(0,0,0,.6) !important;
     }
+    /* Search button — remove sprite, use Font Awesome icon via pseudo-element */
     .leaflet-control-search .search-button {
-      background-color: #252422 !important; border: 1px solid #3a3734 !important;
-      filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(5deg) !important;
+      background-color: #252422 !important;
+      background-image: none !important;
+      border: 1px solid #3a3734 !important;
+      position: relative !important;
+    }
+    .leaflet-control-search .search-button::before {
+      content: '\f002';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      font-size: 14px;
+      color: #e59500;
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
     }
     .leaflet-control-search .search-button:hover { background-color: #2e2b29 !important; }
     .leaflet-control-search .search-input {
@@ -101,12 +123,19 @@
     .leaflet-control-measure-result { color: #e59500 !important; font-weight: bold; }
 
     /* ── Geoman toolbar ─────────────────────────────────────────────── */
-    /* SVG/PNG icon divs inside each toolbar button */
-    .leaflet-pm-toolbar .leaflet-pm-icon {
-      filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(5deg) !important;
+    /* Set colour on the link so SVGs using fill/stroke:currentColor inherit it */
+    .leaflet-pm-toolbar .button-container a {
+      color: #e59500 !important;
     }
-    .leaflet-pm-toolbar a:hover .leaflet-pm-icon {
-      filter: brightness(0) invert(1) !important;
+    /* Also target SVG child elements directly for versions with explicit fills */
+    .leaflet-pm-toolbar .leaflet-pm-icon svg,
+    .leaflet-pm-toolbar .leaflet-pm-icon svg path,
+    .leaflet-pm-toolbar .leaflet-pm-icon svg polyline,
+    .leaflet-pm-toolbar .leaflet-pm-icon svg line,
+    .leaflet-pm-toolbar .leaflet-pm-icon svg rect,
+    .leaflet-pm-toolbar .leaflet-pm-icon svg circle {
+      fill: #e59500 !important;
+      stroke: #e59500 !important;
     }
 
     /* ── Sidebar (leaflet-sidebar-v2) ───────────────────────────────── */
