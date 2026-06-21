@@ -221,6 +221,15 @@ def build_road_graph(roads: list[dict]) -> tuple[list[dict], list[dict], list[st
 # Main
 # ---------------------------------------------------------------------------
 
+def load_static_roads() -> list[dict]:
+    """Return road objects from data/roads_static.json, or [] if the file doesn't exist."""
+    path = OUTPUT_DIR / "roads_static.json"
+    if not path.exists():
+        return []
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
 def main():
     if not TOKEN:
         print("ERROR: KANKA_TOKEN environment variable not set.", file=sys.stderr)
@@ -357,6 +366,12 @@ def main():
                 if end_year is not None:
                     obj["endYear"] = end_year
                 roads_out.append(obj)
+
+    # Merge static roads (geometry-only roads stored in the repo, not Kanka)
+    static_roads = load_static_roads()
+    if static_roads:
+        roads_out.extend(static_roads)
+        print(f"\nLoaded {len(static_roads)} road(s) from data/roads_static.json")
 
     # Fetch organisations for party positions
     print("\nFetching Kanka organisations for party positions...")
