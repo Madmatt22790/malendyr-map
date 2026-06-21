@@ -1455,11 +1455,9 @@
 
       // Function to pull the data from the google sheet landmarks page and create markers/polylines/polygons
       async function getLandmarks() {
-        let url = 'https://script.google.com/macros/s/AKfycbx6IJwr3GuU0V2-vHywpL3bgLxcjdiOze6G2IhH42MOmnNzI4qm4okca76tlw3v0o1BBw/exec';
         try {
-          let response = await fetch(url);
-          const data = await response.json();
-          console.log('getLandmarks: loaded', data && data.length, 'items');
+          const data = (_mapData && _mapData.landmarks) || [];
+          console.log('getLandmarks: loaded', data.length, 'items from Kanka JSON');
 
           const timelineFeatures = [];
 
@@ -1703,12 +1701,9 @@
 
       // Function to pull the data from the google sheet parties page and create markers
       async function getParties() {
-        // user-provided parties sheet webapp
-        let url = 'https://script.google.com/macros/s/AKfycbx-8Yu714vW2OqMxlWr0ESIF4BufhTHRzUr-1-oHIrLhb14uDudHv20nRPLmehKgI0z/exec';
         try {
-          let response = await fetch(url);
-          const data = await response.json();
-          console.log('getParties: loaded', data && data.length, 'items');
+          const data = (_mapData && _mapData.parties) || [];
+          console.log('getParties: loaded', data.length, 'items from Kanka JSON');
 
           const timelineFeatures = [];
 

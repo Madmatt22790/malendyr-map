@@ -1,33 +1,38 @@
 """
-Build map_data.json and road_graph.json from Kanka location entities.
+Build map_data.json and road_graph.json from Kanka entities.
 
 Usage:
     KANKA_TOKEN=<token> python scripts/build_locations.py
 
-Reads all Kanka location entities in campaign 347078, extracts custom
-Attributes (map_lat, map_lon, map_coords, etc.), and writes:
-  data/map_data.json   — locations and roads for the Leaflet map
+Reads Kanka location entities and organisations in campaign 347078 and writes:
+  data/map_data.json   — locations, roads, landmarks, parties for the Leaflet map
   data/road_graph.json — routing graph (nodes + edges) for Dijkstra's
 
 Kanka attribute conventions (set on the entity's Attributes tab):
-  Point locations:
+  Point locations / landmarks:
     map_lat            float (required)
     map_lon            float (required)
+    map_layer          string  "landmarks" routes to landmarks layer; omit for towns
     map_icon           string  e.g. "port_city"  (default: "town")
     map_color          string  e.g. "purple"      (default: "")
     map_plane          string  "overworld" / "underdark"  (default: "overworld")
     map_start_year     int     (default: omitted = no timeline)
     map_end_year       int     (default: omitted = no timeline)
-    map_type           string  "town" / "nation" / "landmark"  (default: "town")
+    map_type           string  "town" / "marker" / "polyline" / "polygon"
     map_visible_to_players  "true" / "false"  (default: "true")
 
   Road / polyline entities:
     map_coords         string  "lat,lon,lat,lon,..."  (required)
     map_road_type      string  "land" / "sea"         (required)
+    map_layer          string  "landmarks" routes polyline to landmarks layer
     map_color          string  e.g. "#8B6914"
     map_start_year     int
     map_end_year       int
     map_line_weight    int  (default: 2)
+
+  Organisations (party locations):
+    map_lat / map_lon  float (required to appear on map)
+    map_icon, map_color, map_start_year, map_end_year  same as above
 """
 
 import json
@@ -96,6 +101,22 @@ def fetch_attributes(entity_id: int) -> dict[str, str]:
     except Exception as e:
         print(f"    warning: could not fetch attributes for entity {entity_id}: {e}")
         return {}
+
+
+def fetch_all_organisations() -> list[dict]:
+    """Return all organisation entities (paginated)."""
+    orgs = []
+    page = 1
+    while True:
+        data = api_get("/organisations", {"page": page, "per_page": 50})
+        batch = data.get("data", [])
+        orgs.extend(batch)
+        links = data.get("links", {})
+        if not links.get("next"):
+            break
+        page += 1
+        print(f"  fetched page {page - 1} ({len(orgs)} organisations so far)")
+    return orgs
 
 
 # ---------------------------------------------------------------------------
@@ -211,6 +232,8 @@ def main():
 
     locations_out = []
     roads_out = []
+    landmarks_out = []
+    parties_out = []
 
     for loc in raw_locations:
         entity_id = loc.get("entity_id") or loc.get("id")
@@ -243,6 +266,14 @@ def main():
         image_url = child.get("image_full") or child.get("image_thumb") or ""
         entry_html = child.get("entry_parsed") or child.get("entry") or ""
 
+        map_layer = attrs.get("map_layer", "").strip().lower()
+        is_landmark = map_layer in ("landmarks", "landmark")
+
+        try:
+            line_weight = int(attrs.get("map_line_weight", "2"))
+        except ValueError:
+            line_weight = 2
+
         if has_point:
             try:
                 lat = float(attrs["map_lat"])
@@ -251,48 +282,136 @@ def main():
                 print(f"    warning: invalid map_lat/map_lon for '{name}' — skipped")
                 continue
 
-            obj = {
-                "name": name,
-                "lat": lat,
-                "lon": lon,
-                "icon": attrs.get("map_icon", "town"),
-                "color": colour,
-                "plane": attrs.get("map_plane", "overworld"),
-                "map_type": attrs.get("map_type", "town"),
-                "image_url": image_url,
-                "entry_html": entry_html,
-                "kanka_url": kanka_url,
-                "visible_to_players": attrs.get("map_visible_to_players", "true").lower() != "false",
-            }
-            if start_year is not None:
-                obj["startYear"] = start_year
-            if end_year is not None:
-                obj["endYear"] = end_year
-            locations_out.append(obj)
+            if is_landmark:
+                obj = {
+                    "name": name,
+                    "type": attrs.get("map_type", "marker"),
+                    "coords": f"{lat},{lon}",
+                    "color": colour,
+                    "icon": attrs.get("map_icon", "town"),
+                    "line_weight": line_weight,
+                    "description": entry_html,
+                    "url": image_url,
+                    "image_url": image_url,
+                    "kanka_url": kanka_url,
+                }
+                if start_year is not None:
+                    obj["startYear"] = start_year
+                if end_year is not None:
+                    obj["endYear"] = end_year
+                landmarks_out.append(obj)
+            else:
+                obj = {
+                    "name": name,
+                    "lat": lat,
+                    "lon": lon,
+                    "icon": attrs.get("map_icon", "town"),
+                    "color": colour,
+                    "plane": attrs.get("map_plane", "overworld"),
+                    "map_type": attrs.get("map_type", "town"),
+                    "image_url": image_url,
+                    "entry_html": entry_html,
+                    "kanka_url": kanka_url,
+                    "visible_to_players": attrs.get("map_visible_to_players", "true").lower() != "false",
+                }
+                if start_year is not None:
+                    obj["startYear"] = start_year
+                if end_year is not None:
+                    obj["endYear"] = end_year
+                locations_out.append(obj)
 
         if has_road:
             coords_raw = attrs["map_coords"]
             road_type = attrs.get("map_road_type", "")
             if not road_type:
                 road_type = "sea" if colour_is_sea(colour) else "land"
-            try:
-                line_weight = int(attrs.get("map_line_weight", "2"))
-            except ValueError:
-                line_weight = 2
 
-            obj = {
-                "name": name,
-                "road_type": road_type,
-                "color": colour,
-                "coords": coords_raw,
-                "line_weight": line_weight,
-                "kanka_url": kanka_url,
-            }
-            if start_year is not None:
-                obj["startYear"] = start_year
-            if end_year is not None:
-                obj["endYear"] = end_year
-            roads_out.append(obj)
+            if is_landmark:
+                obj = {
+                    "name": name,
+                    "type": attrs.get("map_type", "polyline"),
+                    "coords": coords_raw,
+                    "color": colour,
+                    "line_weight": line_weight,
+                    "description": entry_html,
+                    "url": image_url,
+                    "image_url": image_url,
+                    "kanka_url": kanka_url,
+                }
+                if start_year is not None:
+                    obj["startYear"] = start_year
+                if end_year is not None:
+                    obj["endYear"] = end_year
+                landmarks_out.append(obj)
+            else:
+                obj = {
+                    "name": name,
+                    "road_type": road_type,
+                    "color": colour,
+                    "coords": coords_raw,
+                    "line_weight": line_weight,
+                    "kanka_url": kanka_url,
+                }
+                if start_year is not None:
+                    obj["startYear"] = start_year
+                if end_year is not None:
+                    obj["endYear"] = end_year
+                roads_out.append(obj)
+
+    # Fetch organisations for party positions
+    print("\nFetching Kanka organisations for party positions...")
+    raw_orgs = fetch_all_organisations()
+    print(f"Found {len(raw_orgs)} organisation entities. Fetching attributes...")
+
+    for org in raw_orgs:
+        entity_id = org.get("entity_id") or org.get("id")
+        child = org.get("child") or {}
+        name = org.get("name") or child.get("name") or "Unknown"
+        org_id = child.get("id") or org.get("id")
+
+        print(f"  [{entity_id}] {name}")
+        attrs = fetch_attributes(entity_id)
+
+        if "map_lat" not in attrs or "map_lon" not in attrs:
+            continue
+
+        try:
+            lat = float(attrs["map_lat"])
+            lon = float(attrs["map_lon"])
+        except ValueError:
+            print(f"    warning: invalid map_lat/map_lon for organisation '{name}' — skipped")
+            continue
+
+        try:
+            start_year = int(attrs["map_start_year"]) if "map_start_year" in attrs else None
+        except ValueError:
+            start_year = None
+        try:
+            end_year = int(attrs["map_end_year"]) if "map_end_year" in attrs else None
+        except ValueError:
+            end_year = None
+
+        image_url = child.get("image_full") or child.get("image_thumb") or ""
+        entry_html = child.get("entry_parsed") or child.get("entry") or ""
+        kanka_url = f"https://kanka.io/en-US/campaign/{CAMPAIGN}/organisations/{org_id}"
+
+        party_obj = {
+            "name": name,
+            "lat": lat,
+            "lon": lon,
+            "icon": attrs.get("map_icon", "town"),
+            "color": attrs.get("map_color", ""),
+            "description": entry_html,
+            "image_url": image_url,
+            "kanka_url": kanka_url,
+        }
+        if start_year is not None:
+            party_obj["startYear"] = start_year
+        if end_year is not None:
+            party_obj["endYear"] = end_year
+        parties_out.append(party_obj)
+
+    print(f"  {len(parties_out)} organisation(s) with map coordinates")
 
     # Build routing graph
     print(f"\nBuilding road graph from {len(roads_out)} road entities...")
@@ -313,11 +432,17 @@ def main():
         "generated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "locations": locations_out,
         "roads": roads_out,
+        "landmarks": landmarks_out,
+        "parties": parties_out,
     }
     (OUTPUT_DIR / "map_data.json").write_text(
         json.dumps(map_data, indent=2, ensure_ascii=False), encoding="utf-8"
     )
-    print(f"\nWrote data/map_data.json ({len(locations_out)} locations, {len(roads_out)} roads)")
+    print(
+        f"\nWrote data/map_data.json "
+        f"({len(locations_out)} locations, {len(roads_out)} roads, "
+        f"{len(landmarks_out)} landmarks, {len(parties_out)} parties)"
+    )
 
     road_graph = {"nodes": nodes, "edges": edges}
     (OUTPUT_DIR / "road_graph.json").write_text(
