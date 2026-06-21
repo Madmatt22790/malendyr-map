@@ -35,10 +35,10 @@
     /* ── All control bars (zoom, measure, etc.) ─────────────────────── */
     .leaflet-bar { border: 1px solid #3a3734 !important; box-shadow: 0 2px 8px rgba(0,0,0,.6) !important; }
     .leaflet-bar a, .leaflet-bar a:first-child, .leaflet-bar a:last-child {
-      background-color: #252422 !important; color: #e8e4d9 !important;
+      background-color: #252422 !important; color: #e59500 !important;
       border-bottom-color: #3a3734 !important;
     }
-    .leaflet-bar a:hover { background-color: #2e2b29 !important; color: #e59500 !important; }
+    .leaflet-bar a:hover { background-color: #2e2b29 !important; color: #fff !important; }
     .leaflet-bar a.leaflet-disabled { color: #3a3734 !important; }
 
     /* ── Layer control ──────────────────────────────────────────────── */
@@ -49,7 +49,11 @@
     .leaflet-control-layers-expanded { padding: 8px 10px !important; }
     .leaflet-control-layers label { color: #e8e4d9 !important; }
     .leaflet-control-layers-separator { border-top-color: #3a3734 !important; }
-    .leaflet-control-layers-toggle { background-color: #252422 !important; }
+    /* PNG icon — filter converts dark icon to gold */
+    .leaflet-control-layers-toggle {
+      background-color: #252422 !important;
+      filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(5deg) !important;
+    }
 
     /* ── Search control ─────────────────────────────────────────────── */
     .leaflet-container .leaflet-control-search,
@@ -59,6 +63,7 @@
     }
     .leaflet-control-search .search-button {
       background-color: #252422 !important; border: 1px solid #3a3734 !important;
+      filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(5deg) !important;
     }
     .leaflet-control-search .search-button:hover { background-color: #2e2b29 !important; }
     .leaflet-control-search .search-input {
@@ -94,6 +99,15 @@
       background: #e59500 !important; color: #252422 !important;
     }
     .leaflet-control-measure-result { color: #e59500 !important; font-weight: bold; }
+
+    /* ── Geoman toolbar ─────────────────────────────────────────────── */
+    /* SVG/PNG icon divs inside each toolbar button */
+    .leaflet-pm-toolbar .leaflet-pm-icon {
+      filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(5deg) !important;
+    }
+    .leaflet-pm-toolbar a:hover .leaflet-pm-icon {
+      filter: brightness(0) invert(1) !important;
+    }
 
     /* ── Sidebar (leaflet-sidebar-v2) ───────────────────────────────── */
     .sidebar { background: #1a1814 !important; border-right: 1px solid #3a3734 !important; }
