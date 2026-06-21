@@ -1,6 +1,22 @@
 {
-  "generated": "2026-06-21T12:31:54Z",
-  "locations": [],
+  "generated": "2026-06-21T12:59:10Z",
+  "locations": [
+    {
+      "name": "Watford",
+      "lat": -14.393874,
+      "lon": -85.935059,
+      "icon": "port_city",
+      "color": "red",
+      "plane": "overworld",
+      "map_type": "town",
+      "image_url": "",
+      "entry_html": "",
+      "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2032882",
+      "visible_to_players": true,
+      "startYear": 926,
+      "endYear": 2657
+    }
+  ],
   "roads": [],
   "landmarks": [],
   "parties": []
