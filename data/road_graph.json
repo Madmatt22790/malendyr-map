@@ -1,1 +1,18 @@
-﻿{"nodes":[],"edges":[]}
+{
+  "nodes": [
+    {
+      "id": 0,
+      "lat": -40.060855,
+      "lon": -21.003074999999985
+    }
+  ],
+  "edges": [
+    {
+      "from": 0,
+      "to": 0,
+      "distance": 1082821.2,
+      "road_type": "land",
+      "road_name": "Black Hollows"
+    }
+  ]
+}
