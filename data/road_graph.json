@@ -2,1445 +2,1240 @@
   "nodes": [
     {
       "id": 0,
-      "lat": -47.60238,
-      "lon": -23.115234
+      "lat": -40.060855,
+      "lon": -21.003074999999985
     },
     {
       "id": 1,
-      "lat": -40.060855,
-      "lon": -21.003075
+      "lat": -12.599717000000002,
+      "lon": -75.34423799999999
     },
     {
       "id": 2,
-      "lat": -10.597047,
-      "lon": -75.849609
-    },
-    {
-      "id": 3,
       "lat": -10.748318,
       "lon": -72.224121
     },
     {
-      "id": 4,
-      "lat": -15.253987,
-      "lon": -98.97583
+      "id": 3,
+      "lat": -15.137331000000001,
+      "lon": -100.06347699999999
     },
     {
-      "id": 5,
+      "id": 4,
       "lat": -14.063004,
       "lon": -94.416504
     },
     {
+      "id": 5,
+      "lat": -11.676307000000001,
+      "lon": -101.99707
+    },
+    {
       "id": 6,
-      "lat": -11.676307,
-      "lon": -101.99607
-    },
-    {
-      "id": 7,
-      "lat": -15.137331,
-      "lon": -100.063477
-    },
-    {
-      "id": 8,
-      "lat": -14.051247,
-      "lon": -100.50293
-    },
-    {
-      "id": 9,
       "lat": -13.839985,
       "lon": -97.338867
     },
     {
-      "id": 10,
-      "lat": -6.778101,
-      "lon": -96.789551
+      "id": 7,
+      "lat": -6.778101000000001,
+      "lon": -96.78955099999999
     },
     {
-      "id": 11,
+      "id": 8,
       "lat": -14.393874,
       "lon": -85.935059
     },
     {
-      "id": 12,
-      "lat": -8.932004,
-      "lon": -92.548828
+      "id": 9,
+      "lat": -8.932004000000001,
+      "lon": -92.54882799999999
     },
     {
-      "id": 13,
-      "lat": -8.208965,
-      "lon": -92.027963
-    },
-    {
-      "id": 14,
-      "lat": -8.608321,
-      "lon": -98.721541
-    },
-    {
-      "id": 15,
-      "lat": -4.847052,
+      "id": 10,
+      "lat": -4.8470520000000015,
       "lon": -99.294434
     },
     {
-      "id": 16,
-      "lat": -6.305665,
-      "lon": -98.434551
-    },
-    {
-      "id": 17,
+      "id": 11,
       "lat": -11.998713,
-      "lon": -81.584473
+      "lon": -81.58447299999999
     },
     {
-      "id": 18,
+      "id": 12,
       "lat": -13.371776,
       "lon": -83.781738
     },
     {
-      "id": 19,
-      "lat": -11.490541,
-      "lon": -77.387695
+      "id": 13,
+      "lat": -8.602400000000001,
+      "lon": -85.58349599999998
     },
     {
-      "id": 20,
+      "id": 14,
       "lat": -11.352638,
       "lon": -86.682129
     },
     {
-      "id": 21,
-      "lat": -8.6024,
-      "lon": -85.583496
-    },
-    {
-      "id": 22,
+      "id": 15,
       "lat": -13.327735,
-      "lon": -82.485352
+      "lon": -82.48535199999999
     },
     {
-      "id": 23,
-      "lat": -12.747887,
-      "lon": -84.682617
+      "id": 16,
+      "lat": -12.342343000000001,
+      "lon": -85.51757799999999
     },
     {
-      "id": 24,
-      "lat": -12.535901,
-      "lon": -82.665198
+      "id": 17,
+      "lat": -12.471062000000002,
+      "lon": -83.80371099999999
     },
     {
-      "id": 25,
-      "lat": -12.471062,
-      "lon": -83.803711
-    },
-    {
-      "id": 26,
+      "id": 18,
       "lat": -15.115754,
       "lon": -103.888758
     },
     {
-      "id": 27,
+      "id": 19,
       "lat": -47.25683,
       "lon": -130.830688
     },
     {
-      "id": 28,
+      "id": 20,
       "lat": -34.519117,
       "lon": -112.565918
     },
     {
-      "id": 29,
+      "id": 21,
       "lat": -39.858686,
       "lon": -114.543457
     },
     {
-      "id": 30,
+      "id": 22,
       "lat": -18.879617,
       "lon": -118.322754
     },
     {
-      "id": 31,
+      "id": 23,
       "lat": -26.078217,
       "lon": -117.949219
     },
     {
-      "id": 32,
+      "id": 24,
       "lat": -25.470484,
-      "lon": -128.71582
+      "lon": -128.71581999999995
     },
     {
-      "id": 33,
-      "lat": -22.531966,
-      "lon": -126.210938
-    },
-    {
-      "id": 34,
-      "lat": -19.145126,
-      "lon": -119.355469
-    },
-    {
-      "id": 35,
-      "lat": -25.342455,
-      "lon": -129.353027
-    },
-    {
-      "id": 36,
-      "lat": -34.593566,
-      "lon": -154.939898
-    },
-    {
-      "id": 37,
-      "lat": -38.8566,
-      "lon": -113.466797
-    },
-    {
-      "id": 38,
-      "lat": -33.354851,
-      "lon": -139.694851
-    },
-    {
-      "id": 39,
-      "lat": -33.355933,
-      "lon": -145.499773
-    },
-    {
-      "id": 40,
-      "lat": -29.532521,
-      "lon": -140.166667
-    },
-    {
-      "id": 41,
+      "id": 25,
       "lat": -19.808054,
       "lon": -125.679951
     },
     {
-      "id": 42,
-      "lat": -11.525221,
-      "lon": -127.437305
+      "id": 26,
+      "lat": -19.145126,
+      "lon": -119.355469
     },
     {
-      "id": 43,
-      "lat": -42.252725,
-      "lon": -134.67041
+      "id": 27,
+      "lat": -34.593566,
+      "lon": -154.939898
     },
     {
-      "id": 44,
-      "lat": -26.302978,
-      "lon": -133.395996
-    },
-    {
-      "id": 45,
-      "lat": -33.893374,
-      "lon": -147.842394
-    },
-    {
-      "id": 46,
-      "lat": -19.830723,
-      "lon": -118.081177
-    },
-    {
-      "id": 47,
-      "lat": -14.779314,
-      "lon": -119.040234
-    },
-    {
-      "id": 48,
-      "lat": -16.803143,
-      "lon": -107.512207
-    },
-    {
-      "id": 49,
-      "lat": -21.560385,
-      "lon": -109.929199
-    },
-    {
-      "id": 50,
-      "lat": -30.600502,
-      "lon": -96.877441
-    },
-    {
-      "id": 51,
+      "id": 28,
       "lat": -37.581138,
       "lon": -110.041308
     },
     {
-      "id": 52,
-      "lat": -25.203624,
-      "lon": -138.88916
+      "id": 29,
+      "lat": -38.8566,
+      "lon": -113.466797
     },
     {
-      "id": 53,
+      "id": 30,
+      "lat": -33.354851,
+      "lon": -139.694851
+    },
+    {
+      "id": 31,
+      "lat": -11.525221,
+      "lon": -127.437305
+    },
+    {
+      "id": 32,
+      "lat": -42.252725,
+      "lon": -134.67041
+    },
+    {
+      "id": 33,
+      "lat": -24.36598,
+      "lon": -145.84559
+    },
+    {
+      "id": 34,
+      "lat": -19.830723,
+      "lon": -118.081177
+    },
+    {
+      "id": 35,
+      "lat": -14.779314,
+      "lon": -119.040234
+    },
+    {
+      "id": 36,
+      "lat": -21.560385,
+      "lon": -109.929199
+    },
+    {
+      "id": 37,
+      "lat": -30.600502,
+      "lon": -96.87744099999999
+    },
+    {
+      "id": 38,
       "lat": -28.686602,
       "lon": -139.790039
     },
     {
-      "id": 54,
-      "lat": -20.057862,
-      "lon": -85.187988
+      "id": 39,
+      "lat": -14.694457000000002,
+      "lon": -83.29867399999999
     },
     {
-      "id": 55,
-      "lat": -14.694457,
-      "lon": -83.298674
+      "id": 40,
+      "lat": -45.274589,
+      "lon": -122.957862
     },
     {
-      "id": 56,
-      "lat": -13.655049,
-      "lon": -75.37053
-    },
-    {
-      "id": 57,
-      "lat": -20.942616,
-      "lon": -85.144043
-    },
-    {
-      "id": 58,
-      "lat": -43.857991,
-      "lon": -123.709468
-    },
-    {
-      "id": 59,
-      "lat": -46.247739,
-      "lon": -122.411019
-    },
-    {
-      "id": 60,
-      "lat": -29.51366,
-      "lon": -97.338867
-    },
-    {
-      "id": 61,
-      "lat": -23.30223,
+      "id": 41,
+      "lat": -23.302229999999998,
       "lon": -90.32959
     },
     {
-      "id": 62,
+      "id": 42,
       "lat": -24.405894,
       "lon": -102.65625
     },
     {
-      "id": 63,
+      "id": 43,
       "lat": -24.507425,
       "lon": -95.734863
     },
     {
-      "id": 64,
+      "id": 44,
       "lat": -20.342377,
       "lon": -99.052734
     },
     {
-      "id": 65,
-      "lat": -27.034757,
-      "lon": -94.921875
+      "id": 45,
+      "lat": -18.084141,
+      "lon": -96.76757799999999
     },
     {
-      "id": 66,
-      "lat": -18.731785,
-      "lon": -85.671387
-    },
-    {
-      "id": 67,
-      "lat": -18.049299,
-      "lon": -95.860208
-    },
-    {
-      "id": 68,
+      "id": 46,
       "lat": -14.293294,
       "lon": -91.894598
     },
     {
-      "id": 69,
+      "id": 47,
       "lat": -31.803091,
       "lon": -111.621094
     },
     {
-      "id": 70,
+      "id": 48,
       "lat": -26.747128,
       "lon": -116.499023
     },
     {
-      "id": 71,
+      "id": 49,
       "lat": -27.654338,
       "lon": -107.556152
     },
     {
-      "id": 72,
+      "id": 50,
       "lat": -28.165648,
       "lon": -108.215332
     },
     {
-      "id": 73,
+      "id": 51,
       "lat": -29.305561,
       "lon": -108.209839
     },
     {
-      "id": 74,
+      "id": 52,
       "lat": -28.940808,
       "lon": -106.99585
     },
     {
-      "id": 75,
-      "lat": -28.644735,
-      "lon": -106.005641
-    },
-    {
-      "id": 76,
+      "id": 53,
       "lat": -29.664027,
       "lon": -109.603241
     },
     {
-      "id": 77,
+      "id": 54,
       "lat": -26.474938,
       "lon": -108.663003
     },
     {
-      "id": 78,
-      "lat": -40.271144,
-      "lon": -102.634277
+      "id": 55,
+      "lat": -40.265847,
+      "lon": -102.722168
     },
     {
-      "id": 79,
-      "lat": -30.86398,
-      "lon": -96.185303
-    },
-    {
-      "id": 80,
+      "id": 56,
       "lat": -45.341785,
       "lon": -114.98291
     },
     {
-      "id": 81,
-      "lat": -35.70363,
-      "lon": -100.722656
+      "id": 57,
+      "lat": -10.597047,
+      "lon": -75.849609
     },
     {
-      "id": 82,
-      "lat": -12.599717,
-      "lon": -75.344238
+      "id": 58,
+      "lat": -10.229368000000001,
+      "lon": -77.58544899999998
     },
     {
-      "id": 83,
-      "lat": -10.229368,
-      "lon": -77.585449
-    },
-    {
-      "id": 84,
+      "id": 59,
       "lat": -33.513954,
       "lon": -60.864291
     },
     {
-      "id": 85,
+      "id": 60,
       "lat": -10.669714,
       "lon": -73.048096
     },
     {
-      "id": 86,
-      "lat": -16.808412,
-      "lon": -74.265419
-    },
-    {
-      "id": 87,
-      "lat": -15.154993,
-      "lon": -82.443881
-    },
-    {
-      "id": 88,
+      "id": 61,
       "lat": -40.193839,
       "lon": -54.84375
     },
     {
-      "id": 89,
-      "lat": -34.251955,
-      "lon": -62.205575
-    },
-    {
-      "id": 90,
+      "id": 62,
       "lat": -26.0962,
       "lon": -68.97222
     },
     {
-      "id": 91,
-      "lat": -25.680147,
-      "lon": -67.289875
-    },
-    {
-      "id": 92,
+      "id": 63,
       "lat": -26.316819,
       "lon": -69.708978
     },
     {
-      "id": 93,
-      "lat": -32.677986,
-      "lon": -60.867397
-    },
-    {
-      "id": 94,
+      "id": 64,
       "lat": -25.954669,
       "lon": -58.717514
     },
     {
-      "id": 95,
+      "id": 65,
       "lat": -13.81764,
       "lon": -70.345459
     },
     {
-      "id": 96,
-      "lat": -16.936752,
-      "lon": -69.939738
-    },
-    {
-      "id": 97,
+      "id": 66,
       "lat": -15.982747,
       "lon": -72.311846
     },
     {
-      "id": 98,
+      "id": 67,
       "lat": -16.266158,
       "lon": -73.004709
     },
     {
-      "id": 99,
+      "id": 68,
       "lat": -34.554473,
       "lon": -51.030189
     },
     {
-      "id": 100,
+      "id": 69,
+      "lat": -25.695827,
+      "lon": -67.2881
+    },
+    {
+      "id": 70,
+      "lat": -16.936752,
+      "lon": -69.939738
+    },
+    {
+      "id": 71,
       "lat": -66.99102,
       "lon": -8.19358
     },
     {
-      "id": 101,
+      "id": 72,
       "lat": -48.567483,
       "lon": -14.432187
     },
     {
-      "id": 102,
+      "id": 73,
       "lat": -47.98268,
       "lon": -47.118976
     },
     {
-      "id": 103,
+      "id": 74,
       "lat": -65.65037,
       "lon": 11.752391
     },
     {
-      "id": 104,
-      "lat": -66.423236,
-      "lon": -7.294922
-    },
-    {
-      "id": 105,
-      "lat": -59.264978,
-      "lon": -4.394531
-    },
-    {
-      "id": 106,
-      "lat": -33.618737,
-      "lon": -65.981524
-    },
-    {
-      "id": 107,
+      "id": 75,
       "lat": -46.916598,
       "lon": -34.321289
     },
     {
-      "id": 108,
+      "id": 76,
       "lat": -51.719417,
       "lon": -20.670795
     },
     {
-      "id": 109,
-      "lat": -57.797381,
-      "lon": -6.416016
-    },
-    {
-      "id": 110,
+      "id": 77,
       "lat": -69.403623,
       "lon": 2.086943
     },
     {
-      "id": 111,
-      "lat": -68.492232,
-      "lon": 3.208008
-    },
-    {
-      "id": 112,
-      "lat": -67.334681,
-      "lon": -10.019531
-    },
-    {
-      "id": 113,
+      "id": 78,
       "lat": -54.600732,
       "lon": -14.852336
     },
     {
-      "id": 114,
-      "lat": -49.669202,
-      "lon": -13.623047
-    },
-    {
-      "id": 115,
-      "lat": -46.856545,
-      "lon": -35.419922
-    },
-    {
-      "id": 116,
+      "id": 79,
       "lat": -64.011181,
       "lon": 7.646484
     },
     {
-      "id": 117,
-      "lat": -65.5948,
-      "lon": 12.403564
+      "id": 80,
+      "lat": -59.264978,
+      "lon": -4.394531
     },
     {
-      "id": 118,
+      "id": 81,
       "lat": -60.098829,
       "lon": 8.608343
     },
     {
-      "id": 119,
-      "lat": -58.538858,
-      "lon": -5.668945
-    },
-    {
-      "id": 120,
+      "id": 82,
       "lat": -58.596612,
-      "lon": -9.707043
+      "lon": -9.707042999999986
     },
     {
-      "id": 121,
-      "lat": -61.3605,
-      "lon": -25.861816
-    },
-    {
-      "id": 122,
-      "lat": -59.264583,
-      "lon": -10.415039
-    },
-    {
-      "id": 123,
+      "id": 83,
       "lat": -33.663218,
-      "lon": -38.825729
+      "lon": -38.82572899999999
     },
     {
-      "id": 124,
-      "lat": -59.194343,
-      "lon": 2.06543
+      "id": 84,
+      "lat": -58.606494,
+      "lon": -1.2108729999999865
     },
     {
-      "id": 125,
-      "lat": -58.847231,
-      "lon": -3.098145
-    },
-    {
-      "id": 126,
+      "id": 85,
       "lat": -37.588398,
       "lon": -36.424822
     },
     {
-      "id": 127,
+      "id": 86,
       "lat": -58.226011,
-      "lon": -18.015573
+      "lon": -18.015572999999986
     },
     {
-      "id": 128,
+      "id": 87,
       "lat": -58.732412,
-      "lon": -13.204816
+      "lon": -13.204815999999985
     }
   ],
   "edges": [
     {
       "from": 0,
-      "to": 1,
+      "to": 0,
       "distance": 1082821.2,
       "road_type": "land",
       "road_name": "Black Hollows"
     },
     {
-      "from": 2,
-      "to": 3,
+      "from": 1,
+      "to": 2,
       "distance": 467633.4,
       "road_type": "land",
       "road_name": "Gora - Birch"
     },
     {
-      "from": 4,
-      "to": 5,
+      "from": 3,
+      "to": 4,
       "distance": 556436.3,
       "road_type": "land",
       "road_name": "Coldford - Yedif"
     },
     {
-      "from": 6,
-      "to": 7,
+      "from": 5,
+      "to": 3,
       "distance": 458072.1,
       "road_type": "land",
       "road_name": "Ilelion - Coldford"
     },
     {
-      "from": 8,
-      "to": 9,
+      "from": 5,
+      "to": 6,
       "distance": 342262.0,
       "road_type": "land",
       "road_name": "Ilelion - Oakenshell"
     },
     {
-      "from": 9,
-      "to": 10,
+      "from": 7,
+      "to": 7,
       "distance": 823665.1,
       "road_type": "land",
       "road_name": "Dawnshear - Oakenfell"
     },
     {
-      "from": 10,
-      "to": 6,
+      "from": 7,
+      "to": 5,
       "distance": 791690.8,
       "road_type": "land",
       "road_name": "Dawnshear - Ilelion"
     },
     {
-      "from": 10,
-      "to": 11,
+      "from": 7,
+      "to": 8,
       "distance": 1591932.0,
       "road_type": "land",
       "road_name": "Dawnshear - Watford"
     },
     {
-      "from": 12,
-      "to": 13,
+      "from": 9,
+      "to": 7,
       "distance": 98710.6,
       "road_type": "land",
       "road_name": "Bereston - Dawnshear"
     },
     {
-      "from": 14,
-      "to": 15,
+      "from": 10,
+      "to": 5,
       "distance": 446036.5,
       "road_type": "land",
       "road_name": "Bastion - Ilelion"
     },
     {
-      "from": 10,
-      "to": 16,
+      "from": 7,
+      "to": 7,
       "distance": 190179.2,
       "road_type": "land",
       "road_name": "Bastien - Dawnshear"
     },
     {
-      "from": 17,
-      "to": 18,
+      "from": 11,
+      "to": 12,
       "distance": 284317.3,
       "road_type": "land",
       "road_name": "Berxley - Watford"
     },
     {
-      "from": 17,
-      "to": 19,
+      "from": 11,
+      "to": 1,
       "distance": 461836.9,
       "road_type": "land",
       "road_name": "Berxley - Gora"
     },
     {
-      "from": 20,
-      "to": 21,
+      "from": 13,
+      "to": 13,
       "distance": 353915.5,
       "road_type": "land",
       "road_name": "Hammerton - Polperro"
     },
     {
-      "from": 20,
-      "to": 18,
+      "from": 14,
+      "to": 12,
       "distance": 388799.1,
       "road_type": "land",
       "road_name": "Polperro - Wingston"
     },
     {
-      "from": 18,
-      "to": 22,
+      "from": 12,
+      "to": 15,
       "distance": 114514.9,
       "road_type": "land",
       "road_name": "Wingston - Seer Shack"
     },
     {
-      "from": 23,
-      "to": 24,
+      "from": 16,
+      "to": 17,
       "distance": 224021.3,
       "road_type": "land",
       "road_name": "Lancaster - Dartle"
     },
     {
-      "from": 25,
-      "to": 18,
+      "from": 17,
+      "to": 12,
       "distance": 100183.1,
       "road_type": "land",
       "road_name": "Dartle - Wingston"
     },
     {
-      "from": 6,
-      "to": 26,
+      "from": 5,
+      "to": 18,
       "distance": 456620.0,
       "road_type": "land",
       "road_name": "Ilelion - Silverkeep"
     },
     {
-      "from": 27,
-      "to": 28,
+      "from": 19,
+      "to": 20,
       "distance": 2197033.6,
       "road_type": "land",
       "road_name": "Langadlr - Bar-Anor"
     },
     {
-      "from": 27,
-      "to": 29,
+      "from": 19,
+      "to": 21,
       "distance": 2028402.3,
       "road_type": "land",
       "road_name": "Langadlr - Bar- Ithil"
     },
     {
-      "from": 28,
-      "to": 30,
+      "from": 20,
+      "to": 22,
       "distance": 2029114.5,
       "road_type": "land",
       "road_name": "Bar-Anor - Treetop Burgh"
     },
     {
-      "from": 31,
-      "to": 32,
+      "from": 23,
+      "to": 24,
       "distance": 1155121.2,
       "road_type": "land",
       "road_name": "Bar-Anor - Ashford"
     },
     {
-      "from": 32,
-      "to": 30,
+      "from": 24,
+      "to": 22,
       "distance": 1464716.2,
       "road_type": "land",
       "road_name": "Asford - Treetop Burgh"
     },
     {
-      "from": 33,
-      "to": 34,
+      "from": 25,
+      "to": 26,
       "distance": 974899.2,
       "road_type": "land",
       "road_name": "Ravenwood - Treetop Burgh"
     },
     {
-      "from": 35,
-      "to": 36,
+      "from": 24,
+      "to": 27,
       "distance": 2807650.4,
       "road_type": "land",
       "road_name": "Ashford - Duskhaven"
     },
     {
-      "from": 27,
-      "to": 32,
+      "from": 24,
+      "to": 27,
       "distance": 2643218.2,
       "road_type": "land",
       "road_name": "Ashford - Duskhaven"
     },
     {
       "from": 28,
-      "to": 37,
+      "to": 29,
       "distance": 755455.5,
       "road_type": "land",
       "road_name": "Icespire Outpost - Bar-Anor"
     },
     {
-      "from": 38,
-      "to": 39,
+      "from": 30,
+      "to": 27,
       "distance": 547687.4,
       "road_type": "land",
       "road_name": "Highspire - Duskhaven"
     },
     {
-      "from": 38,
-      "to": 40,
+      "from": 30,
+      "to": 24,
       "distance": 433266.7,
       "road_type": "land",
       "road_name": "Highspire - Ashford"
     },
     {
-      "from": 41,
-      "to": 42,
+      "from": 25,
+      "to": 31,
       "distance": 967768.7,
       "road_type": "land",
       "road_name": "Ravenswood - Stonehoolow"
     },
     {
-      "from": 38,
-      "to": 43,
+      "from": 30,
+      "to": 32,
       "distance": 1090192.0,
       "road_type": "land",
       "road_name": "Highspire - Langadlr"
     },
     {
-      "from": 38,
-      "to": 32,
+      "from": 30,
+      "to": 24,
       "distance": 1386587.0,
       "road_type": "land",
       "road_name": "Highspire - Ashford"
     },
     {
-      "from": 44,
-      "to": 45,
+      "from": 33,
+      "to": 27,
       "distance": 2499043.9,
       "road_type": "land",
       "road_name": "Mirefall - Treetop Burgh - Duskhaven"
     },
     {
-      "from": 26,
-      "to": 46,
+      "from": 18,
+      "to": 34,
       "distance": 1596726.3,
       "road_type": "land",
       "road_name": "Silverkeep - Treetop Burgh"
     },
     {
-      "from": 47,
-      "to": 30,
+      "from": 35,
+      "to": 22,
       "distance": 471526.9,
       "road_type": "land",
       "road_name": "The Y Stop - Treetop Burgh"
     },
     {
-      "from": 42,
-      "to": 47,
+      "from": 31,
+      "to": 35,
       "distance": 1043043.2,
       "road_type": "land",
       "road_name": "Stonehollow - The Y Stop"
     },
     {
-      "from": 48,
-      "to": 31,
+      "from": 18,
+      "to": 23,
       "distance": 1544400.6,
       "road_type": "land",
       "road_name": "Silverkeep - Meningwyne - Hollowfin"
     },
     {
-      "from": 49,
-      "to": 50,
+      "from": 36,
+      "to": 37,
       "distance": 1715499.3,
       "road_type": "land",
       "road_name": "Meningwyne - Monhegan"
     },
     {
-      "from": 50,
-      "to": 51,
+      "from": 28,
+      "to": 37,
       "distance": 1583309.7,
       "road_type": "land",
       "road_name": "Icespire Outpost - Monhegan"
     },
     {
-      "from": 29,
-      "to": 27,
+      "from": 21,
+      "to": 19,
       "distance": 1844471.5,
       "road_type": "land",
       "road_name": "Snowveil Hamlet - Frost Pass - Langdalr"
     },
     {
-      "from": 52,
-      "to": 53,
+      "from": 30,
+      "to": 38,
       "distance": 397445.6,
       "road_type": "land",
       "road_name": "Brightwood - Highspire"
     },
     {
-      "from": 50,
-      "to": 11,
+      "from": 37,
+      "to": 8,
       "distance": 2529106.4,
       "road_type": "land",
       "road_name": "Monhegan - Watford"
     },
     {
-      "from": 54,
-      "to": 55,
+      "from": 37,
+      "to": 39,
       "distance": 629156.8,
       "road_type": "land",
       "road_name": "Monhegan - Veritas"
     },
     {
-      "from": 56,
-      "to": 57,
+      "from": 37,
+      "to": 1,
       "distance": 1352448.9,
       "road_type": "land",
       "road_name": "Monhegan - Gora"
     },
     {
-      "from": 58,
-      "to": 59,
+      "from": 40,
+      "to": 40,
       "distance": 284620.9,
       "road_type": "land",
       "road_name": "Crystalfen"
     },
     {
-      "from": 60,
-      "to": 61,
+      "from": 41,
+      "to": 37,
       "distance": 1023106.9,
       "road_type": "land",
       "road_name": "Candlehold - Monhegan"
     },
     {
-      "from": 61,
-      "to": 62,
+      "from": 41,
+      "to": 42,
       "distance": 1266125.5,
       "road_type": "land",
       "road_name": "Candlehold - Menigwyne"
     },
     {
-      "from": 61,
-      "to": 26,
+      "from": 41,
+      "to": 18,
       "distance": 1765933.3,
       "road_type": "land",
       "road_name": "Candlehold - Silverkeep"
     },
     {
-      "from": 63,
-      "to": 64,
+      "from": 43,
+      "to": 44,
       "distance": 575075.8,
       "road_type": "land",
       "road_name": "Tarcia - Menigwyne"
     },
     {
-      "from": 63,
-      "to": 65,
+      "from": 43,
+      "to": 37,
       "distance": 292577.2,
       "road_type": "land",
       "road_name": "Tarcia - Monhegan"
     },
     {
-      "from": 66,
-      "to": 67,
+      "from": 37,
+      "to": 45,
       "distance": 1079044.2,
       "road_type": "land",
       "road_name": "Monhegan - Bearcall"
     },
     {
-      "from": 66,
-      "to": 68,
+      "from": 37,
+      "to": 46,
       "distance": 826803.2,
       "road_type": "land",
       "road_name": "Monhegan - Yedif"
     },
     {
-      "from": 26,
-      "to": 7,
+      "from": 18,
+      "to": 3,
       "distance": 410616.0,
       "road_type": "land",
       "road_name": "Silverkeep - Coldford"
     },
     {
-      "from": 49,
-      "to": 69,
+      "from": 36,
+      "to": 47,
       "distance": 1275194.6,
       "road_type": "land",
       "road_name": "Meningwyne - Tower - Bar-Anor"
     },
     {
-      "from": 70,
-      "to": 50,
+      "from": 48,
+      "to": 37,
       "distance": 1963372.7,
       "road_type": "land",
       "road_name": "Hollowfen - Tower - Monhegan"
     },
     {
-      "from": 71,
-      "to": 72,
+      "from": 49,
+      "to": 50,
       "distance": 86184.8,
       "road_type": "land",
       "road_name": "Varnstead - Tower"
     },
     {
-      "from": 72,
-      "to": 73,
+      "from": 51,
+      "to": 51,
       "distance": 148386.7,
       "road_type": "land",
       "road_name": "Greymire - Tower"
     },
     {
-      "from": 73,
-      "to": 74,
+      "from": 52,
+      "to": 52,
       "distance": 81273.8,
       "road_type": "land",
       "road_name": "Emberforge - Tower"
     },
     {
-      "from": 75,
-      "to": 76,
+      "from": 37,
+      "to": 53,
       "distance": 367295.2,
       "road_type": "land",
       "road_name": "Monhegan - Emberforge - Greymire - Bar-Anor"
     },
     {
-      "from": 75,
-      "to": 77,
+      "from": 37,
+      "to": 54,
       "distance": 358619.5,
       "road_type": "land",
       "road_name": "Monhegan - Varnstead - Menigwyne"
     },
     {
-      "from": 78,
-      "to": 79,
+      "from": 55,
+      "to": 37,
       "distance": 1311064.0,
       "road_type": "land",
       "road_name": "Leondra - Monhegan"
     },
     {
-      "from": 78,
-      "to": 80,
+      "from": 55,
+      "to": 56,
       "distance": 1170310.5,
       "road_type": "land",
       "road_name": "Leondra - Frostpass"
     },
     {
-      "from": 78,
-      "to": 51,
+      "from": 55,
+      "to": 28,
       "distance": 702068.5,
       "road_type": "land",
       "road_name": "Leondra - Frostspire Outpost"
     },
     {
-      "from": 78,
-      "to": 81,
+      "from": 37,
+      "to": 55,
       "distance": 572157.8,
       "road_type": "land",
       "road_name": "Monhegan - Leondra"
     },
     {
-      "from": 82,
-      "to": 2,
+      "from": 1,
+      "to": 57,
       "distance": 478054.1,
       "road_type": "land",
       "road_name": "Gora - Birch"
     },
     {
-      "from": 19,
-      "to": 83,
+      "from": 58,
+      "to": 1,
       "distance": 141889.0,
       "road_type": "land",
       "road_name": "Vex - Gora"
     },
     {
-      "from": 84,
-      "to": 85,
+      "from": 59,
+      "to": 60,
       "distance": 2941464.4,
       "road_type": "land",
       "road_name": "Apaleth - Birch"
     },
     {
-      "from": 84,
-      "to": 79,
+      "from": 59,
+      "to": 37,
       "distance": 3351254.6,
       "road_type": "land",
       "road_name": "Apaleth - Monhegan"
     },
     {
-      "from": 86,
-      "to": 87,
+      "from": 59,
+      "to": 39,
       "distance": 893285.0,
       "road_type": "land",
       "road_name": "Apaleth - Veritas"
     },
     {
-      "from": 88,
-      "to": 89,
+      "from": 61,
+      "to": 59,
       "distance": 1353812.6,
       "road_type": "land",
       "road_name": "Rendhar Bay - Apaleth"
     },
     {
-      "from": 90,
-      "to": 91,
+      "from": 62,
+      "to": 59,
       "distance": 174536.7,
       "road_type": "land",
       "road_name": "Marrowlight - Apaleth"
     },
     {
-      "from": 90,
-      "to": 92,
+      "from": 62,
+      "to": 63,
       "distance": 77488.2,
       "road_type": "land",
       "road_name": "Marrowlight - Apaleth & Gora"
     },
     {
-      "from": 91,
-      "to": 93,
+      "from": 62,
+      "to": 59,
       "distance": 1660176.2,
       "road_type": "land",
       "road_name": "Marrowlight - Dunfell - Apaleth"
     },
     {
-      "from": 94,
-      "to": 95,
+      "from": 64,
+      "to": 64,
       "distance": 1816723.5,
       "road_type": "land",
       "road_name": "Birch - Dunfell"
     },
     {
-      "from": 88,
-      "to": 84,
+      "from": 59,
+      "to": 61,
       "distance": 1624863.4,
       "road_type": "land",
       "road_name": "Apaleth - Averin - Rendhar Bay"
     },
     {
-      "from": 95,
-      "to": 96,
+      "from": 65,
+      "to": 62,
       "distance": 594608.9,
       "road_type": "land",
       "road_name": "Gredydrift - Seawend - Marrowlight"
     },
     {
-      "from": 97,
-      "to": 56,
+      "from": 66,
+      "to": 1,
       "distance": 466287.2,
       "road_type": "land",
       "road_name": "Seawend - Gora"
     },
     {
-      "from": 98,
-      "to": 86,
+      "from": 67,
+      "to": 39,
       "distance": 147291.9,
       "road_type": "land",
       "road_name": "Seawend - Veritas"
     },
     {
-      "from": 94,
-      "to": 99,
+      "from": 64,
+      "to": 68,
       "distance": 1413753.4,
       "road_type": "land",
       "road_name": "Dunfell - Bellmarch - Avering"
     },
     {
-      "from": 91,
-      "to": 96,
+      "from": 69,
+      "to": 70,
       "distance": 1315503.1,
       "road_type": "land",
       "road_name": "Windmere Out"
     },
     {
-      "from": 100,
-      "to": 101,
+      "from": 71,
+      "to": 72,
       "distance": 2284679.3,
       "road_type": "land",
       "road_name": "Durnport - Embercross"
     },
     {
-      "from": 102,
-      "to": 101,
+      "from": 73,
+      "to": 72,
       "distance": 2483624.2,
       "road_type": "land",
       "road_name": "Hightower - Embercross"
     },
     {
-      "from": 103,
-      "to": 104,
+      "from": 71,
+      "to": 74,
       "distance": 1164120.7,
       "road_type": "land",
       "road_name": "Durnport - Sablemere"
     },
     {
-      "from": 103,
-      "to": 105,
+      "from": 74,
+      "to": 72,
       "distance": 1128756.9,
       "road_type": "land",
       "road_name": "Sablemere - Embercross"
     },
     {
-      "from": 100,
-      "to": 56,
+      "from": 71,
+      "to": 1,
       "distance": 7865507.9,
       "road_type": "land",
       "road_name": "Durnport - Gora"
     },
     {
-      "from": 106,
-      "to": 79,
+      "from": 71,
+      "to": 37,
       "distance": 2847033.9,
       "road_type": "land",
       "road_name": "Durnport - Monhegan"
     },
     {
-      "from": 11,
-      "to": 82,
+      "from": 1,
+      "to": 1,
       "distance": 1304084.3,
       "road_type": "land",
       "road_name": "Gora - Watford"
     },
     {
-      "from": 101,
-      "to": 107,
+      "from": 72,
+      "to": 75,
       "distance": 1687658.5,
       "road_type": "land",
       "road_name": "Embercross - Coldmere - Hightower"
     },
     {
-      "from": 108,
-      "to": 109,
+      "from": 76,
+      "to": 71,
       "distance": 1152655.8,
       "road_type": "land",
       "road_name": "Coldmere - Durnport"
     },
     {
-      "from": 110,
-      "to": 111,
+      "from": 77,
+      "to": 77,
       "distance": 110789.9,
       "road_type": "land",
       "road_name": "Vallenshore"
     },
     {
-      "from": 110,
-      "to": 112,
+      "from": 77,
+      "to": 71,
       "distance": 587274.6,
       "road_type": "land",
       "road_name": "Vallenshore - Durnport"
     },
     {
-      "from": 110,
-      "to": 103,
+      "from": 77,
+      "to": 74,
       "distance": 1368166.9,
       "road_type": "land",
       "road_name": "Vallenshore - Sablemere"
     },
     {
       "from": 0,
-      "to": 1,
+      "to": 0,
       "distance": 1082821.2,
       "road_type": "land",
       "road_name": "Black Hollows"
     },
     {
-      "from": 113,
-      "to": 114,
+      "from": 78,
+      "to": 72,
       "distance": 554719.1,
       "road_type": "land",
       "road_name": "Wolfspine - Embercross"
     },
     {
-      "from": 84,
-      "to": 102,
+      "from": 59,
+      "to": 73,
       "distance": 2009759.7,
       "road_type": "land",
       "road_name": "Apaleth - Hightower"
     },
     {
-      "from": 94,
-      "to": 102,
+      "from": 64,
+      "to": 73,
       "distance": 2735172.0,
       "road_type": "land",
       "road_name": "Dunfell - Averin - Hightower"
     },
     {
-      "from": 99,
-      "to": 115,
+      "from": 68,
+      "to": 76,
       "distance": 1891197.5,
       "road_type": "land",
       "road_name": "Averin - Coldmere"
     },
     {
-      "from": 116,
-      "to": 105,
+      "from": 79,
+      "to": 80,
       "distance": 1204351.1,
       "road_type": "land",
       "road_name": "Wolfspine - Baulders Deep"
     },
     {
-      "from": 117,
-      "to": 118,
+      "from": 74,
+      "to": 81,
       "distance": 690684.5,
       "road_type": "land",
       "road_name": "Sablemere - Baulders Deep"
     },
     {
-      "from": 113,
-      "to": 119,
+      "from": 78,
+      "to": 71,
       "distance": 788698.4,
       "road_type": "land",
       "road_name": "Wolfspine - Lochhaven - Durnport"
     },
     {
-      "from": 120,
-      "to": 121,
+      "from": 82,
+      "to": 59,
       "distance": 993193.3,
       "road_type": "land",
       "road_name": "Lochhaven - Apaleth"
     },
     {
-      "from": 122,
-      "to": 112,
+      "from": 82,
+      "to": 71,
       "distance": 983615.0,
       "road_type": "land",
       "road_name": "Lochhaven - Durnport"
     },
     {
-      "from": 99,
-      "to": 123,
+      "from": 83,
+      "to": 68,
       "distance": 1127289.5,
       "road_type": "land",
       "road_name": "Northin - Averin"
     },
     {
-      "from": 123,
-      "to": 115,
+      "from": 83,
+      "to": 76,
       "distance": 1566264.5,
       "road_type": "land",
       "road_name": "Northin - Coldmere"
     },
     {
-      "from": 123,
-      "to": 102,
+      "from": 83,
+      "to": 73,
       "distance": 1737061.4,
       "road_type": "land",
       "road_name": "Northin - Hightower"
     },
     {
-      "from": 124,
-      "to": 119,
+      "from": 84,
+      "to": 82,
       "distance": 464388.7,
       "road_type": "land",
       "road_name": "Wakefield - Lochhaven"
     },
     {
-      "from": 125,
-      "to": 105,
+      "from": 84,
+      "to": 71,
       "distance": 87472.7,
       "road_type": "land",
       "road_name": "Wakefield - Durnport"
     },
     {
-      "from": 123,
-      "to": 126,
+      "from": 83,
+      "to": 85,
       "distance": 584727.8,
       "road_type": "land",
       "road_name": "PF Monestary"
     },
     {
-      "from": 100,
-      "to": 101,
+      "from": 71,
+      "to": 72,
       "distance": 2296765.1,
       "road_type": "land",
       "road_name": "Durnport - Alnwick - Embercross"
     },
     {
-      "from": 120,
-      "to": 113,
+      "from": 82,
+      "to": 82,
       "distance": 932874.1,
       "road_type": "land",
       "road_name": "Wolfspine - Wandermere - Lochhaven"
     },
     {
-      "from": 127,
-      "to": 108,
+      "from": 86,
+      "to": 76,
       "distance": 767850.8,
       "road_type": "land",
       "road_name": "Wandermere - Coldmere"
     },
     {
-      "from": 120,
-      "to": 113,
+      "from": 82,
+      "to": 82,
       "distance": 935516.1,
       "road_type": "land",
       "road_name": "Wolfspine - Wandermere - Lochhaven"
     },
     {
-      "from": 128,
-      "to": 113,
+      "from": 87,
+      "to": 78,
       "distance": 470284.1,
       "road_type": "land",
       "road_name": "Lowood - Wolfspine"
