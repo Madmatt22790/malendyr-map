@@ -278,9 +278,19 @@
             <span style="color:#9a968f;">Distance</span>
             <span><span id="route-miles" style="color:#e59500;font-weight:bold;">--</span><span style="color:#9a968f;"> mi</span></span>
           </div>
-          <div style="display:flex;justify-content:space-between;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
             <span style="color:#9a968f;">Travel time</span>
             <span><span id="route-days" style="color:#e59500;font-weight:bold;">--</span><span style="color:#9a968f;"> days</span></span>
+          </div>
+          <div id="route-breakdown" style="display:none;border-top:1px solid #2a2724;margin-top:4px;padding-top:4px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
+              <span style="color:#9a968f;font-size:11px;">Land</span>
+              <span style="font-size:11px;"><span id="route-land-miles" style="color:#e59500;">--</span><span style="color:#9a968f;"> mi / </span><span id="route-land-days" style="color:#e59500;">--</span><span style="color:#9a968f;"> days</span></span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="color:#9a968f;font-size:11px;">Sea</span>
+              <span style="font-size:11px;"><span id="route-sea-miles" style="color:#4488ff;">--</span><span style="color:#9a968f;"> mi / </span><span id="route-sea-days" style="color:#4488ff;">--</span><span style="color:#9a968f;"> days</span></span>
+            </div>
           </div>
         </div>
         <div style="margin-top:7px;color:#4a4640;font-size:10px;text-align:center;line-height:1.4;">
@@ -2369,7 +2379,7 @@
 
       var _routeFromPt = null;  // {lat, lon, name}
       var _routeToPt   = null;
-      var _routePolyline = null;
+      var _routePolylines = [];
 
       function setRouteFrom(lat, lon, name) {
         _routeFromPt = {lat: lat, lon: lon, name: name};
@@ -2402,9 +2412,12 @@
       }
 
       function _clearRouteDisplay() {
-        if (_routePolyline) { try { map.removeLayer(_routePolyline); } catch(e){} _routePolyline = null; }
+        _routePolylines.forEach(function(pl){ try { map.removeLayer(pl); } catch(e){} });
+        _routePolylines = [];
         var el = document.getElementById('route-result');
         if (el) el.style.display = 'none';
+        var bd = document.getElementById('route-breakdown');
+        if (bd) bd.style.display = 'none';
       }
 
       function toggleRoutePlanner() {
@@ -2521,27 +2534,90 @@
           return;
         }
 
-        var miles = Math.round(result.totalDistance * COORD_TO_MILES);
-
         var paceVal = 'normal';
         try { document.querySelectorAll('input[name="route-pace"]').forEach(function(i){ if (i.checked) paceVal = i.value; }); } catch(e){}
-        var speed = (roadTypeVal === 'sea') ? SEA_SPEED : (LAND_SPEEDS[paceVal] || 24);
-        var days  = Math.round(miles / speed * 10) / 10;
 
-        if (resultEl) resultEl.style.display = '';
-        if (milesEl)  milesEl.textContent = miles;
-        if (daysEl)   daysEl.textContent  = days;
+        // Build edge lookup so each path leg can be resolved to its road_type
+        var edgeLookup = {};
+        _roadGraph.edges.forEach(function(e) {
+          edgeLookup[e.from + '|' + e.to] = e;
+          edgeLookup[e.to   + '|' + e.from] = e;
+        });
 
-        // Draw route on map
+        // Walk path, accumulate land/sea distance and build per-type drawing segments
         var nodeMap = {};
         _roadGraph.nodes.forEach(function(n){ nodeMap[n.id] = n; });
-        var coords = result.path.map(function(id){ var n = nodeMap[id]; return n ? [n.lat, n.lon] : null; }).filter(Boolean);
-        if (coords.length >= 2) {
-          _routePolyline = L.polyline(coords, {
-            color: roadTypeVal === 'sea' ? '#4488ff' : '#e59500',
-            weight: 4, opacity: 0.85, dashArray: '10, 5'
-          }).addTo(map);
-          try { map.fitBounds(_routePolyline.getBounds(), {padding: [50, 50]}); } catch(e){}
+
+        var landDist = 0, seaDist = 0;
+        var segments = [];
+        var curType = null, curCoords = [];
+
+        for (var i = 0; i < result.path.length; i++) {
+          var node = nodeMap[result.path[i]];
+          if (!node) continue;
+          var pt = [node.lat, node.lon];
+
+          if (i === 0) { curCoords = [pt]; continue; }
+
+          var edge  = edgeLookup[result.path[i-1] + '|' + result.path[i]];
+          var etype = edge ? (edge.road_type || 'land') : 'land';
+          if (etype === 'sea') seaDist += edge ? edge.distance : 0;
+          else                 landDist += edge ? edge.distance : 0;
+
+          if (curType === null) {
+            curType = etype;
+            curCoords.push(pt);
+          } else if (etype !== curType) {
+            segments.push({type: curType, coords: curCoords});
+            curType = etype;
+            curCoords = [curCoords[curCoords.length - 1], pt];
+          } else {
+            curCoords.push(pt);
+          }
+        }
+        if (curCoords.length >= 2) segments.push({type: curType || 'land', coords: curCoords});
+
+        var landMiles  = Math.round(landDist * COORD_TO_MILES);
+        var seaMiles   = Math.round(seaDist  * COORD_TO_MILES);
+        var totalMiles = Math.round((landDist + seaDist) * COORD_TO_MILES);
+
+        var landSpeed  = LAND_SPEEDS[paceVal] || 24;
+        var landDays   = Math.round(landMiles / landSpeed * 10) / 10;
+        var seaDays    = Math.round(seaMiles  / SEA_SPEED * 10) / 10;
+        var totalDays  = Math.round((landMiles / landSpeed + seaMiles / SEA_SPEED) * 10) / 10;
+
+        if (resultEl) resultEl.style.display = '';
+        if (milesEl)  milesEl.textContent = totalMiles;
+        if (daysEl)   daysEl.textContent  = totalDays;
+
+        // Show breakdown rows only for genuinely mixed routes
+        var bdEl = document.getElementById('route-breakdown');
+        if (bdEl) {
+          if (roadTypeVal === 'mixed' && landDist > 0 && seaDist > 0) {
+            document.getElementById('route-land-miles').textContent = landMiles;
+            document.getElementById('route-land-days').textContent  = landDays;
+            document.getElementById('route-sea-miles').textContent  = seaMiles;
+            document.getElementById('route-sea-days').textContent   = seaDays;
+            bdEl.style.display = '';
+          } else {
+            bdEl.style.display = 'none';
+          }
+        }
+
+        // Draw each segment in its road_type colour
+        var allCoords = [];
+        segments.forEach(function(seg) {
+          if (seg.coords.length >= 2) {
+            var pl = L.polyline(seg.coords, {
+              color: seg.type === 'sea' ? '#4488ff' : '#e59500',
+              weight: 4, opacity: 0.85, dashArray: '10, 5'
+            }).addTo(map);
+            _routePolylines.push(pl);
+            allCoords = allCoords.concat(seg.coords);
+          }
+        });
+        if (allCoords.length >= 2) {
+          try { map.fitBounds(L.polyline(allCoords).getBounds(), {padding: [50, 50]}); } catch(e){}
         }
       }
 
