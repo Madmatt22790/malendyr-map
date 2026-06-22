@@ -53,8 +53,9 @@ CAMPAIGN = 347078
 BASE_URL = f"https://api.kanka.io/1.0/campaigns/{CAMPAIGN}"
 TOKEN = os.environ.get("KANKA_TOKEN", "")
 RATE_DELAY = 1.5           # seconds between API calls
-SNAP_TOL = 0.5             # coordinate units for endpoint snapping
+SNAP_TOL = 0.5             # coordinate units for road-to-road endpoint snapping
 SNAP_WARN_TOL = 1.0        # flag endpoints within this distance but not snapped
+TOWN_SNAP_TOL = 5.0        # snap road endpoints to nearby towns within this distance
 
 OUTPUT_DIR = Path(__file__).parent.parent / "data"
 
@@ -165,15 +166,31 @@ def snap_or_create(pt: tuple[float, float], nodes: list[dict]) -> int:
     return idx
 
 
-def build_road_graph(roads: list[dict]) -> tuple[list[dict], list[dict], list[str]]:
+def build_road_graph(
+    roads: list[dict],
+    town_lookup: dict[str, tuple[float, float]] | None = None,
+) -> tuple[list[dict], list[dict], list[str]]:
     """
     Build nodes + edges from road coordinate chains.
+
+    town_lookup: optional {lower_name: (lat, lon)} used to snap road endpoints
+    to their named towns (e.g. "Gora - Birch" → start snaps to Gora's coords).
+    This is more reliable than distance-based snapping because towns can be very
+    close together.
 
     Returns (nodes, edges, warnings).
     """
     nodes: list[dict] = []
     edges: list[dict] = []
     warnings: list[str] = []
+
+    def name_snap(road_name: str, is_start: bool) -> tuple[float, float] | None:
+        """Return exact town coords for the start/end of a named road, or None."""
+        if not town_lookup:
+            return None
+        parts = [p.strip() for p in road_name.split(" - ")]
+        key = (parts[0] if is_start else parts[-1]).lower()
+        return town_lookup.get(key)
 
     for road in roads:
         raw = road.get("coords", "")
@@ -184,8 +201,13 @@ def build_road_graph(roads: list[dict]) -> tuple[list[dict], list[dict], list[st
             warnings.append(f"Road '{road.get('name')}' has fewer than 2 coordinate points — skipped")
             continue
 
-        start_id = snap_or_create(pts[0], nodes)
-        end_id = snap_or_create(pts[-1], nodes)
+        road_name = road.get("name", "")
+        # Snap endpoints to named town positions when available
+        start_pt = name_snap(road_name, is_start=True) or pts[0]
+        end_pt   = name_snap(road_name, is_start=False) or pts[-1]
+
+        start_id = snap_or_create(start_pt, nodes)
+        end_id = snap_or_create(end_pt, nodes)
 
         # Compute total polyline length in Haversine metres
         total_m = sum(haversine_m(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1])
@@ -428,9 +450,10 @@ def main():
 
     print(f"  {len(parties_out)} organisation(s) with map coordinates")
 
-    # Build routing graph
-    print(f"\nBuilding road graph from {len(roads_out)} road entities...")
-    nodes, edges, warnings = build_road_graph(roads_out)
+    # Build routing graph — pass town positions so road endpoints snap by name
+    town_lookup = {loc["name"].lower(): (loc["lat"], loc["lon"]) for loc in locations_out}
+    print(f"\nBuilding road graph from {len(roads_out)} road entities ({len(town_lookup)} towns for name-snapping)...")
+    nodes, edges, warnings = build_road_graph(roads_out, town_lookup=town_lookup)
     print(f"  {len(nodes)} nodes, {len(edges)} edges")
 
     if warnings:
