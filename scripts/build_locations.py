@@ -53,6 +53,7 @@ CAMPAIGN = 347078
 BASE_URL = f"https://api.kanka.io/1.0/campaigns/{CAMPAIGN}"
 TOKEN = os.environ.get("KANKA_TOKEN", "")
 RATE_DELAY = 1.5           # seconds between API calls
+RETRY_DELAY = 60           # seconds to wait after a 429 before retrying
 SNAP_TOL = 0.5             # coordinate units for road-to-road endpoint snapping
 SNAP_WARN_TOL = 1.0        # flag endpoints within this distance but not snapped
 TOWN_SNAP_TOL = 5.0        # snap road endpoints to nearby towns within this distance
@@ -72,8 +73,16 @@ _session.headers.update({"Authorization": f"Bearer {TOKEN}", "Content-Type": "ap
 
 
 def api_get(endpoint: str, params: dict | None = None) -> dict:
-    time.sleep(RATE_DELAY)
-    r = _session.get(f"{BASE_URL}{endpoint}", params=params or {})
+    for attempt in range(5):
+        time.sleep(RATE_DELAY)
+        r = _session.get(f"{BASE_URL}{endpoint}", params=params or {})
+        if r.status_code == 429:
+            wait = RETRY_DELAY * (attempt + 1)
+            print(f"    429 rate limit — waiting {wait}s before retry...")
+            time.sleep(wait)
+            continue
+        r.raise_for_status()
+        return r.json()
     r.raise_for_status()
     return r.json()
 
