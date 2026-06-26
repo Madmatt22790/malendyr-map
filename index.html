@@ -289,7 +289,7 @@
             </div>
             <div style="display:flex;justify-content:space-between;">
               <span style="color:#9a968f;font-size:11px;">Sea</span>
-              <span style="font-size:11px;"><span id="route-sea-miles" style="color:#4488ff;">--</span><span style="color:#9a968f;"> mi / </span><span id="route-sea-days" style="color:#4488ff;">--</span><span style="color:#9a968f;"> days</span></span>
+              <span style="font-size:11px;"><span id="route-sea-miles" style="color:#4682B4;">--</span><span style="color:#9a968f;"> mi / </span><span id="route-sea-days" style="color:#4682B4;">--</span><span style="color:#9a968f;"> days</span></span>
             </div>
           </div>
         </div>
@@ -2564,15 +2564,32 @@
           if (etype === 'sea') seaDist += edge ? edge.distance : 0;
           else                 landDist += edge ? edge.distance : 0;
 
+          // Use stored polyline coords if available, otherwise straight line
+          var legPts = null;
+          if (edge && edge.coords) {
+            var vals = edge.coords.split(',');
+            var parsed = [];
+            for (var j = 0; j < vals.length - 1; j += 2) {
+              var pla = parseFloat(vals[j]), plo = parseFloat(vals[j + 1]);
+              if (!isNaN(pla) && !isNaN(plo)) parsed.push([pla, plo]);
+            }
+            if (parsed.length >= 2) {
+              if (edge.to === result.path[i - 1]) parsed.reverse();
+              legPts = parsed;
+            }
+          }
+
           if (curType === null) {
             curType = etype;
-            curCoords.push(pt);
+            if (legPts) curCoords = curCoords.concat(legPts.slice(1));
+            else curCoords.push(pt);
           } else if (etype !== curType) {
             segments.push({type: curType, coords: curCoords});
             curType = etype;
-            curCoords = [curCoords[curCoords.length - 1], pt];
+            curCoords = legPts || [curCoords[curCoords.length - 1], pt];
           } else {
-            curCoords.push(pt);
+            if (legPts) curCoords = curCoords.concat(legPts.slice(1));
+            else curCoords.push(pt);
           }
         }
         if (curCoords.length >= 2) segments.push({type: curType || 'land', coords: curCoords});
@@ -2609,7 +2626,7 @@
         segments.forEach(function(seg) {
           if (seg.coords.length >= 2) {
             var pl = L.polyline(seg.coords, {
-              color: seg.type === 'sea' ? '#4488ff' : '#e59500',
+              color: seg.type === 'sea' ? '#4682B4' : '#e59500',
               weight: 4, opacity: 0.85, dashArray: '10, 5'
             }).addTo(map);
             _routePolylines.push(pl);

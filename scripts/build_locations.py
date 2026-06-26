@@ -211,9 +211,28 @@ def build_road_graph(
             continue
 
         road_name = road.get("name", "")
-        # Snap endpoints to named town positions when available
-        start_pt = name_snap(road_name, is_start=True) or pts[0]
-        end_pt   = name_snap(road_name, is_start=False) or pts[-1]
+        from_town = road.get("from", "")
+        to_town   = road.get("to", "")
+
+        # Snap endpoints to named town positions when available.
+        # Prefer explicit from/to fields; fall back to name-based parsing for old-style roads.
+        if from_town and town_lookup:
+            start_pt = town_lookup.get(from_town.lower()) or pts[0]
+        else:
+            start_pt = name_snap(road_name, is_start=True) or pts[0]
+
+        if to_town and town_lookup:
+            to_coords = town_lookup.get(to_town.lower())
+            if to_coords:
+                end_pt = to_coords
+            else:
+                # Junction/waypoint not in town_lookup: use whichever polyline
+                # endpoint differs from start_pt (handles reversed-draw roads).
+                last_matches_start = (abs(pts[-1][0] - start_pt[0]) < SNAP_TOL
+                                      and abs(pts[-1][1] - start_pt[1]) < SNAP_TOL)
+                end_pt = pts[0] if last_matches_start else pts[-1]
+        else:
+            end_pt = name_snap(road_name, is_start=False) or pts[-1]
 
         start_id = snap_or_create(start_pt, nodes)
         end_id = snap_or_create(end_pt, nodes)
@@ -222,12 +241,23 @@ def build_road_graph(
         total_m = sum(haversine_m(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1])
                       for i in range(len(pts) - 1))
 
+        # Normalise stored coords to from→to direction so the route-drawing
+        # reverse-check in index.html works correctly for all roads regardless
+        # of which direction they were drawn on the map.
+        coord_pts = pts
+        dist0 = abs(pts[0][0] - start_pt[0]) + abs(pts[0][1] - start_pt[1])
+        distN = abs(pts[-1][0] - start_pt[0]) + abs(pts[-1][1] - start_pt[1])
+        if distN < dist0:
+            coord_pts = pts[::-1]
+        raw_coords = ", ".join(f"{p[0]}, {p[1]}" for p in coord_pts)
+
         edges.append({
             "from": start_id,
             "to": end_id,
             "distance": round(total_m, 1),
             "road_type": road.get("road_type", "land"),
             "road_name": road.get("name", ""),
+            "coords": raw_coords,
         })
 
     # Connectivity report: flag endpoints that have no snap partner within 2×SNAP_TOL
