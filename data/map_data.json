@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-25T09:59:20Z",
+  "generated": "2026-06-26T09:56:41Z",
   "locations": [
     {
       "name": "The Grove",
@@ -243,8 +243,8 @@
     },
     {
       "name": "Watford",
-      "lat": -14.393874,
-      "lon": -85.935059,
+      "lat": -13.965648,
+      "lon": -86.231689,
       "icon": "port_city",
       "color": "red",
       "plane": "overworld",
@@ -408,8 +408,8 @@
     },
     {
       "name": "Buhrora",
-      "lat": -44.419175,
-      "lon": 68.24707,
+      "lat": -44.707531,
+      "lon": 67.758974,
       "icon": "town",
       "color": "",
       "plane": "overworld",
