@@ -263,9 +263,9 @@
         <div style="height:1px;background:#3a3734;margin:6px 0;"></div>
         <div style="margin-bottom:5px;">
           <div style="color:#7a93ac;font-size:10px;letter-spacing:1px;margin-bottom:3px;">ROAD TYPE</div>
-          <label style="margin-right:7px;cursor:pointer;"><input type="radio" name="route-type" value="land" checked onchange="if(_routeFromPt&&_routeToPt)calculateRoute()"> Land</label>
+          <label style="margin-right:7px;cursor:pointer;"><input type="radio" name="route-type" value="land" onchange="if(_routeFromPt&&_routeToPt)calculateRoute()"> Land</label>
           <label style="margin-right:7px;cursor:pointer;"><input type="radio" name="route-type" value="sea" onchange="if(_routeFromPt&&_routeToPt)calculateRoute()"> Sea</label>
-          <label style="cursor:pointer;"><input type="radio" name="route-type" value="mixed" onchange="if(_routeFromPt&&_routeToPt)calculateRoute()"> Mixed</label>
+          <label style="cursor:pointer;"><input type="radio" name="route-type" value="mixed" checked onchange="if(_routeFromPt&&_routeToPt)calculateRoute()"> Mixed</label>
         </div>
         <div style="margin-bottom:7px;">
           <div style="color:#7a93ac;font-size:10px;letter-spacing:1px;margin-bottom:3px;">PACE (land)</div>
@@ -302,10 +302,10 @@
     <script type ="text/javascript" src="scripts/sidebar-v2-master/js/leaflet-sidebar.js"></script>
     <script type="text/javascript">
       // Create the tile layer that contains the images. Define the zoom levels and other options.
-      var overworld = L.tileLayer('Overworld/{z}-{x}-{y}.png', {minZoom: 0, maxZoom: 8, noWrap: true, zoomControl: false});
+      var overworld = L.tileLayer('Overworld/{z}-{x}-{y}.png', {minZoom: 0, maxZoom: 8, zoomControl: false});
 
       // Create the map and set its different layers as well as its starting view location and zoom level
-      var map = L.map('map', {layers: [overworld], drawControl: true, attributionControl: false}).setView([-28.098749, -108.28125], 6);
+      var map = L.map('map', {layers: [overworld], drawControl: true, attributionControl: false, worldCopyJump: true}).setView([-28.098749, -108.28125], 6);
 
       // Set the zoom position
       L.control.zoom({position:'topright',}).addTo(map);
@@ -2458,17 +2458,19 @@
         return best;
       }
 
-      function _dijkstra(graph, startId, endId, allowedTypes) {
+      function _dijkstra(graph, startId, endId, allowedTypes, speedMap) {
         if (!graph || !graph.nodes || !graph.edges) return null;
-        // Build adjacency list
+        // Build adjacency list — when speedMap provided, weight by travel time (distance/speed)
+        // so Dijkstra minimises days rather than raw distance in mixed mode
         var adj = {};
         graph.nodes.forEach(function(n) { adj[n.id] = []; });
         graph.edges.forEach(function(e) {
           if (allowedTypes && allowedTypes.indexOf(e.road_type) === -1) return;
           adj[e.from] = adj[e.from] || [];
           adj[e.to]   = adj[e.to]   || [];
-          adj[e.from].push({id: e.to,   dist: e.distance});
-          adj[e.to].push(  {id: e.from, dist: e.distance});
+          var w = speedMap ? e.distance / (speedMap[e.road_type] || speedMap.land) : e.distance;
+          adj[e.from].push({id: e.to,   dist: w});
+          adj[e.to].push(  {id: e.from, dist: w});
         });
 
         var dist = {}, prev = {}, visited = {};
@@ -2512,6 +2514,10 @@
         } catch(e){}
         var allowedTypes = roadTypeVal === 'mixed' ? ['land', 'sea'] : [roadTypeVal];
 
+        var paceVal = 'normal';
+        try { document.querySelectorAll('input[name="route-pace"]').forEach(function(i){ if (i.checked) paceVal = i.value; }); } catch(e){}
+        var speedMap = roadTypeVal === 'mixed' ? {land: LAND_SPEEDS[paceVal] || 24, sea: SEA_SPEED} : null;
+
         var startNode = _nearestNode(_roadGraph, _routeFromPt.lat, _routeFromPt.lon, allowedTypes);
         var endNode   = _nearestNode(_roadGraph, _routeToPt.lat,   _routeToPt.lon,   allowedTypes);
 
@@ -2526,7 +2532,7 @@
           return;
         }
 
-        var result = _dijkstra(_roadGraph, startNode.id, endNode.id, allowedTypes);
+        var result = _dijkstra(_roadGraph, startNode.id, endNode.id, allowedTypes, speedMap);
         if (!result) {
           if (resultEl) resultEl.style.display = '';
           if (milesEl)  milesEl.textContent = '(no route found)';
@@ -2626,7 +2632,7 @@
         segments.forEach(function(seg) {
           if (seg.coords.length >= 2) {
             var pl = L.polyline(seg.coords, {
-              color: seg.type === 'sea' ? '#4682B4' : '#e59500',
+              color: seg.type === 'sea' ? '#00bcd4' : '#e59500',
               weight: 4, opacity: 0.85, dashArray: '10, 5'
             }).addTo(map);
             _routePolylines.push(pl);
