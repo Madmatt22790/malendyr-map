@@ -226,11 +226,14 @@ def build_road_graph(
             if to_coords:
                 end_pt = to_coords
             else:
-                # Junction/waypoint not in town_lookup: use whichever polyline
-                # endpoint differs from start_pt (handles reversed-draw roads).
-                last_matches_start = (abs(pts[-1][0] - start_pt[0]) < SNAP_TOL
-                                      and abs(pts[-1][1] - start_pt[1]) < SNAP_TOL)
-                end_pt = pts[0] if last_matches_start else pts[-1]
+                # Junction/waypoint not in town_lookup: pick whichever endpoint
+                # is farther from start_pt. For a correctly-drawn road pts[-1] is
+                # farther; for a reversed draw pts[0] is farther. This avoids the
+                # previous threshold check which false-positively merged sea
+                # junctions that sit within SNAP_TOL of their parent town.
+                dist_first = abs(pts[0][0] - start_pt[0]) + abs(pts[0][1] - start_pt[1])
+                dist_last  = abs(pts[-1][0] - start_pt[0]) + abs(pts[-1][1] - start_pt[1])
+                end_pt = pts[0] if dist_last < dist_first else pts[-1]
         else:
             end_pt = name_snap(road_name, is_start=False) or pts[-1]
 
