@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-27T09:03:11Z",
+  "generated": "2026-06-28T09:37:41Z",
   "locations": [
     {
       "name": "The Grove",
@@ -183,8 +183,8 @@
     },
     {
       "name": "Brightwood",
-      "lat": -33.354851,
-      "lon": -139.694851,
+      "lat": -33.266278,
+      "lon": -139.817505,
       "icon": "port_town",
       "color": "green",
       "plane": "overworld",
@@ -483,8 +483,8 @@
     },
     {
       "name": "Khila",
-      "lat": -47.309354,
-      "lon": 70.817871,
+      "lat": -46.764509,
+      "lon": 69.609375,
       "icon": "town",
       "color": "",
       "plane": "overworld",
@@ -768,8 +768,8 @@
     },
     {
       "name": "Stonehaven",
-      "lat": -0.565694,
-      "lon": -105.029297,
+      "lat": -0.620418,
+      "lon": -105.276489,
       "icon": "port_city",
       "color": "#20214F",
       "plane": "overworld",
@@ -798,8 +798,8 @@
     },
     {
       "name": "Hearthridge",
-      "lat": -0.939618,
-      "lon": -105.869751,
+      "lat": -0.829334,
+      "lon": -105.809326,
       "icon": "town",
       "color": "#20214F",
       "plane": "overworld",
@@ -813,8 +813,8 @@
     },
     {
       "name": "Northbay",
-      "lat": 0.626193,
-      "lon": -105.095215,
+      "lat": 0.570682,
+      "lon": -105.3479,
       "icon": "port_town",
       "color": "#20214F",
       "plane": "overworld",
@@ -858,8 +858,8 @@
     },
     {
       "name": "Hillstead",
-      "lat": 0.159243,
-      "lon": -105.562134,
+      "lat": -0.043395,
+      "lon": -105.430298,
       "icon": "town",
       "color": "#20214F",
       "plane": "overworld",
