@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-28T09:37:41Z",
+  "generated": "2026-06-29T11:29:29Z",
   "locations": [
     {
       "name": "The Grove",
@@ -1023,8 +1023,8 @@
     },
     {
       "name": "Windcliff",
-      "lat": 0.647548,
-      "lon": -105.089706,
+      "lat": 1.241284,
+      "lon": -105.858765,
       "icon": "port_town",
       "color": "#20214F",
       "plane": "overworld",
@@ -1113,8 +1113,8 @@
     },
     {
       "name": "Cliffwatch",
-      "lat": 1.620217,
-      "lon": -106.276245,
+      "lat": 1.707887,
+      "lon": -106.567383,
       "icon": "port_town",
       "color": "#20214F",
       "plane": "overworld",
@@ -1203,8 +1203,8 @@
     },
     {
       "name": "Yedif",
-      "lat": -13.733741000000002,
-      "lon": -92.680664,
+      "lat": -13.550387,
+      "lon": -92.828979,
       "icon": "port_town",
       "color": "red",
       "plane": "overworld",
@@ -1218,8 +1218,8 @@
     },
     {
       "name": "Bearcall",
-      "lat": -18.084141,
-      "lon": -96.76757799999999,
+      "lat": -18.041333,
+      "lon": -97.283936,
       "icon": "port_city",
       "color": "red",
       "plane": "overworld",
@@ -1233,8 +1233,8 @@
     },
     {
       "name": "Coldford",
-      "lat": -15.137331000000001,
-      "lon": -100.06347699999999,
+      "lat": -14.997793,
+      "lon": -100.431519,
       "icon": "port_town",
       "color": "red",
       "plane": "overworld",
@@ -1293,8 +1293,8 @@
     },
     {
       "name": "Durnport",
-      "lat": -66.99102,
-      "lon": -8.19358,
+      "lat": -67.26396,
+      "lon": -8.206787,
       "icon": "port_town",
       "color": "orange",
       "plane": "overworld",
