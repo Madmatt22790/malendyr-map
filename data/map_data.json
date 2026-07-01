@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-30T10:07:25Z",
+  "generated": "2026-07-01T10:18:08Z",
   "locations": [
     {
       "name": "The Grove",
@@ -1443,8 +1443,8 @@
     },
     {
       "name": "Vreji Village",
-      "lat": -45.650189,
-      "lon": -1.8676759999999866,
+      "lat": -45.479146,
+      "lon": -2.246704,
       "icon": "town",
       "color": "#D1D100",
       "plane": "overworld",
