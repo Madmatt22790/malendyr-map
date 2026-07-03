@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-02T09:40:22Z",
+  "generated": "2026-07-03T09:46:21Z",
   "locations": [
     {
       "name": "The Grove",
@@ -51,7 +51,7 @@
       "lat": -40.060855,
       "lon": -21.003074999999985,
       "icon": "town",
-      "color": "orange",
+      "color": "#9b7653",
       "plane": "overworld",
       "map_type": "town",
       "image_url": "",
@@ -1788,8 +1788,8 @@
     },
     {
       "name": "Leondra",
-      "lat": -40.265847,
-      "lon": -102.722168,
+      "lat": -40.283902,
+      "lon": -102.930908,
       "icon": "port_town",
       "color": "green",
       "plane": "overworld",
@@ -1956,7 +1956,7 @@
     {
       "name": "Black Hollows",
       "road_type": "land",
-      "color": "orange",
+      "color": "#9b7653",
       "coords": "-47.60238, -23.115234, -46.558643, -22.192383, -45.660135, -21.181641, -44.434101, -22.5, -43.961634, -21.84082, -43.261833, -20.368652, -42.58625, -20.632324, -41.427369, -22.104492, -40.060855, -21.003075",
       "line_weight": 2,
       "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/1850513",
