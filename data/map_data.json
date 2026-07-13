@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-12T08:44:21Z",
+  "generated": "2026-07-13T10:04:35Z",
   "locations": [
     {
       "name": "The Grove",
@@ -584,21 +584,6 @@
       "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127464",
       "visible_to_players": true,
       "startYear": 590,
-      "endYear": 2657
-    },
-    {
-      "name": "Duport",
-      "lat": -50.401586,
-      "lon": 83.803711,
-      "icon": "town",
-      "color": "",
-      "plane": "overworld",
-      "map_type": "town",
-      "image_url": "",
-      "entry_html": "",
-      "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127465",
-      "visible_to_players": true,
-      "startYear": 520,
       "endYear": 2657
     },
     {
