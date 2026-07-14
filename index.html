@@ -183,6 +183,41 @@
     .leaflet-pm-toolbar .button-container button.active {
       background: #2e2b29 !important; color: #e59500 !important;
     }
+    /* Town Map Modal */
+    #town-map-modal {
+      display: none; position: fixed; inset: 0; z-index: 9000;
+      background: rgba(20,18,16,0.94); flex-direction: column;
+    }
+    #town-map-modal.open { display: flex; }
+    #town-map-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px; background: #1a1714; border-bottom: 1px solid #3a3734; flex-shrink: 0;
+    }
+    #town-map-title { color: #e0cfa0; font-size: 15px; font-weight: 600; }
+    #town-search-wrap { position: relative; flex: 1; max-width: 280px; }
+    #town-search-input {
+      width: 100%; background: #2e2b29; border: 1px solid #3a3734;
+      color: #c8c4bb; font-size: 12px; padding: 4px 8px; border-radius: 3px;
+      box-sizing: border-box; outline: none;
+    }
+    #town-search-input::placeholder { color: #6a6460; }
+    #town-search-results {
+      display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 2px;
+      background: #1a1714; border: 1px solid #3a3734; border-radius: 0 0 3px 3px;
+      z-index: 9999; max-height: 220px; overflow-y: auto;
+    }
+    .town-search-result { padding: 5px 8px; color: #c8c4bb; font-size: 12px; cursor: pointer; }
+    .town-search-result:hover { background: #2e2b29; color: #e0cfa0; }
+    #town-map-close {
+      background: #2e2b29; border: 1px solid #3a3734; color: #c8c4bb;
+      font-size: 13px; padding: 4px 10px; border-radius: 3px; cursor: pointer;
+    }
+    .town-route-btn {
+      background: #2e2b29; border: 1px solid #3a3734; color: #c8c4bb;
+      font-size: 11px; padding: 3px 8px; border-radius: 3px; cursor: pointer;
+    }
+    #town-map-container { flex: 1; position: relative; overflow: hidden; }
+    #town-leaflet-map { width: 100%; height: 100%; background: #C0BCB7; }
   </style>
   </head>
   <body style="height: 100%; margin: 0;">
@@ -293,6 +328,17 @@
             </div>
           </div>
         </div>
+        <div id="route-town-result" style="display:none;border-top:1px solid #3a3734;padding-top:7px;margin-top:4px;">
+          <div style="color:#7a93ac;font-size:10px;letter-spacing:1px;margin-bottom:4px;">TOWN ROUTE</div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+            <span style="color:#9a968f;">Walk <span style="font-size:10px;">(5 km/h)</span></span>
+            <span id="route-town-walk" style="color:#e59500;font-weight:bold;">--</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span style="color:#9a968f;">Run <span style="font-size:10px;">(12 km/h)</span></span>
+            <span id="route-town-run" style="color:#e59500;font-weight:bold;">--</span>
+          </div>
+        </div>
         <div style="margin-top:7px;color:#4a4640;font-size:10px;text-align:center;line-height:1.4;">
           Use "Set as From / To" buttons<br>in any location popup
         </div>
@@ -355,6 +401,7 @@
           sp.set('lat', c.lat.toFixed(6));
           sp.set('lng', c.lng.toFixed(6));
           if (placeActive && placeName) sp.set('place', placeName);
+          if (_townCurrentName) sp.set('town', _townCurrentName);
           // include current timeline year if timelineCurrentTime is set
           if (Number.isFinite(timelineCurrentTime)) {
             try {
@@ -365,6 +412,10 @@
           location.hash = '?' + sp.toString();
         } catch (e) { console.log('updateHashFromMap error', e); }
       }
+
+      // declared here so applyHashOnLoad (below) can set them before data loads
+      var requestedYear = null;
+      var requestedTown = null;
 
       // apply initial hash params on load
       (function applyHashOnLoad(){
@@ -387,6 +438,8 @@
             var yv = Number(params.get('year'));
             if (Number.isFinite(yv)) requestedYear = Math.floor(yv);
           }
+          // optional town parameter (e.g. #?town=Skalanes) -- applied after data loads
+          if (params.has('town')) requestedTown = params.get('town');
         } catch(e){ console.log('applyHashOnLoad error', e); }
       })();
 
@@ -404,6 +457,7 @@
   var lg_parties = L.layerGroup();
     var lg_nations = L.layerGroup();
       var lg_states = L.layerGroup();
+      var lg_forests = L.layerGroup();
       var lg_roads = L.layerGroup().addTo(map);
   // Layer used as search index - contains invisible markers for all locations so search works
   var searchLayer = L.layerGroup();
@@ -669,9 +723,6 @@
       var timelineMaxYear = -Infinity;
   // current timeline time in milliseconds (updated by slider)
   var timelineCurrentTime = null;
-  // optional year requested via URL fragment (e.g. #?year=1200)
-  var requestedYear = null;
-
   // Optional debug flag — set to true in the console to enable diagnostic logging without editing this file.
   window.MAP_DEBUG = window.MAP_DEBUG || false;
   function debugLog() { if (window.MAP_DEBUG) { try { console.log.apply(console, arguments); } catch (e) {} } }
@@ -698,6 +749,7 @@
       if (timeline_roads && timeline_roads.setTime) timeline_roads.setTime(t);
       if (timeline_landmarks && timeline_landmarks.setTime) timeline_landmarks.setTime(t);
       if (timeline_parties && timeline_parties.setTime) timeline_parties.setTime(t);
+      _updateForestVisibility(y);
     } catch (e) { console.log('setTimelineYear setTime error', e); }
     // update UI
     try {
@@ -1645,15 +1697,37 @@
                   var lo = parseFloat(vals[i+1]);
                   if (Number.isFinite(la) && Number.isFinite(lo)) latlngs.push([la, lo]);
                 }
+                var plWs = (item.weight_start != null) ? Number(item.weight_start) : null;
+                var plWe = (item.weight_end != null) ? Number(item.weight_end) : null;
+                var plTaper = (plWs !== null && !isNaN(plWs) && plWe !== null && !isNaN(plWe));
                 if (latlngs.length > 0) {
                   if (Number.isFinite(s) || Number.isFinite(e)) {
-                    var coordsGeo = latlngs.map(function(p){ return [p[1], p[0]]; });
-                    timelineFeatures.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: coordsGeo }, properties: { name: name, color: color, line_weight: lw, startYear: s, endYear: e } });
+                    if (plTaper && latlngs.length >= 2) {
+                      for (var si = 0; si < latlngs.length - 1; si++) {
+                        var tMid = (latlngs.length > 2) ? (si + 0.5) / (latlngs.length - 1) : 0.5;
+                        var wSeg = plWs + (plWe - plWs) * tMid;
+                        timelineFeatures.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: [[latlngs[si][1], latlngs[si][0]], [latlngs[si+1][1], latlngs[si+1][0]]] }, properties: { name: name, color: color, line_weight: wSeg, startYear: s, endYear: e } });
+                      }
+                    } else {
+                      var coordsGeo = latlngs.map(function(p){ return [p[1], p[0]]; });
+                      timelineFeatures.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: coordsGeo }, properties: { name: name, color: color, line_weight: lw, startYear: s, endYear: e } });
+                    }
                   } else {
-                    var pl = L.polyline(latlngs, { color: color || '#3388ff', weight: lw || 2 });
-                    try { pl.bindPopup(makeEntityPopupHtml(item), popupOptions); } catch(e){ pl.bindPopup('<h3>' + name + '</h3>', popupOptions); }
-                    try { pl.options._baseWeight = Number(lw) || 2; } catch(e) { pl.options._baseWeight = Number(lw) || 2; }
-                    lg_landmarks.addLayer(pl);
+                    if (plTaper && latlngs.length >= 2) {
+                      for (var si = 0; si < latlngs.length - 1; si++) {
+                        var tMid = (latlngs.length > 2) ? (si + 0.5) / (latlngs.length - 1) : 0.5;
+                        var wSeg = plWs + (plWe - plWs) * tMid;
+                        var segPl = L.polyline([latlngs[si], latlngs[si+1]], { color: color || '#3388ff', weight: computeScaledLineWeight(wSeg) });
+                        segPl.options._baseWeight = wSeg;
+                        if (si === 0) { try { segPl.bindPopup(makeEntityPopupHtml(item), popupOptions); } catch(e2){ segPl.bindPopup('<h3>' + name + '</h3>', popupOptions); } }
+                        lg_landmarks.addLayer(segPl);
+                      }
+                    } else {
+                      var pl = L.polyline(latlngs, { color: color || '#3388ff', weight: lw || 2 });
+                      try { pl.bindPopup(makeEntityPopupHtml(item), popupOptions); } catch(e){ pl.bindPopup('<h3>' + name + '</h3>', popupOptions); }
+                      try { pl.options._baseWeight = Number(lw) || 2; } catch(e) { pl.options._baseWeight = Number(lw) || 2; }
+                      lg_landmarks.addLayer(pl);
+                    }
                   }
                 }
               } else if (t === 'polygon') {
@@ -1835,9 +1909,11 @@
         }
       }
 
-      // Run the above functions — load Kanka JSON first, then process all layers
+      // Run the above functions — load Kanka JSON first, town index second, then all layers
           _loadMapDataJson().then(function() {
-            return Promise.all([getTowns(), getNations(), getStates(), getRoads(), getLandmarks(), getParties()]);
+            return getTownIndex();
+          }).then(function() {
+            return Promise.all([getTowns(), getNations(), getStates(), getRoads(), getLandmarks(), getParties(), getForests()]);
           }).then(function() {
         // Create layer controls now that timelines may exist
         // Replace overlays with timeline layers where available
@@ -1848,7 +1924,8 @@
           "Nations": lg_nations,
           "States": lg_states,
           "Roads": lg_roads,
-          "Landmarks": lg_landmarks
+          "Landmarks": lg_landmarks,
+          "Forests": lg_forests
         }
 
         if (window.layercontrols) {
@@ -2036,6 +2113,7 @@
           })();
           // Ensure any timeline layers created above are actually added to the map and initialized
           try { ensureTimelinesOnMap(); try { map.fire && map.fire('zoomend'); } catch(ee){} } catch(e) { console.log('ensureTimelinesOnMap call error', e); }
+          if (requestedTown) { try { openTownMap(requestedTown); } catch(e){ console.log('requestedTown open error', e); } }
         }).catch(function(e){ console.log('Error initializing timelines', e); });
 
   // Create a function that removes the towns when the zoom is to high and adds them back when the zoom level is low enough. Stops the map looking crowded when it is zoomed out.
@@ -2349,6 +2427,12 @@
           parts.push('<div style="margin-top:6px;text-align:center;">' + linkParts.join(' &bull; ') + '</div>');
         }
 
+        // View Town Map button
+        if (props.name && typeof TOWN_MAP_FILES !== 'undefined' && TOWN_MAP_FILES[props.name]) {
+          var safeTownName = (props.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          parts.push('<div style="margin-top:6px;text-align:center;"><button onclick="openTownMap(\'' + safeTownName + '\')" style="background:#2e2b29;border:1px solid #3a3734;color:#e59500;font-size:11px;padding:3px 10px;border-radius:3px;cursor:pointer;">View Town Map</button></div>');
+        }
+
         // Route buttons (only when lat/lon are stored on the props — point locations)
         var rLat = Number(props.lat), rLon = Number(props.lon);
         if (Number.isFinite(rLat) && Number.isFinite(rLon)) {
@@ -2398,14 +2482,14 @@
       }
 
       function clearRouteFrom() {
-        _routeFromPt = null;
+        _routeFromPt = null; _townRouteFrom = null;
         var el = document.getElementById('route-from-name');
         if (el) el.textContent = '--';
         _clearRouteDisplay();
       }
 
       function clearRouteTo() {
-        _routeToPt = null;
+        _routeToPt = null; _townRouteTo = null;
         var el = document.getElementById('route-to-name');
         if (el) el.textContent = '--';
         _clearRouteDisplay();
@@ -2414,10 +2498,14 @@
       function _clearRouteDisplay() {
         _routePolylines.forEach(function(pl){ try { map.removeLayer(pl); } catch(e){} });
         _routePolylines = [];
+        _townRoutePolylines.forEach(function(p){ try{ if(_townMap) _townMap.removeLayer(p); }catch(e){} });
+        _townRoutePolylines = [];
         var el = document.getElementById('route-result');
         if (el) el.style.display = 'none';
         var bd = document.getElementById('route-breakdown');
         if (bd) bd.style.display = 'none';
+        var tr = document.getElementById('route-town-result');
+        if (tr) tr.style.display = 'none';
       }
 
       function toggleRoutePlanner() {
@@ -2651,6 +2739,667 @@
           setPopup(e.layer);
         });
       });
+
+      // ── Forest scatter system (canvas-based) ────────────────────────────────
+      function _forestRng(seed) {
+        return function() {
+          seed = (seed + 0x6D2B79F5) | 0;
+          var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      function _pointInPoly(lat, lon, ring) {
+        var inside = false;
+        for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+          var yi = ring[i][0], xi = ring[i][1], yj = ring[j][0], xj = ring[j][1];
+          if (((xi > lon) !== (xj > lon)) && (lat < (yj - yi) * (lon - xi) / (xj - xi) + yi))
+            inside = !inside;
+        }
+        return inside;
+      }
+      function _scatterTrees(ring, density, variantBase) {
+        variantBase = variantBase || 0;
+        var minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity;
+        ring.forEach(function(p) {
+          minLat = Math.min(minLat, p[0]); maxLat = Math.max(maxLat, p[0]);
+          minLon = Math.min(minLon, p[1]); maxLon = Math.max(maxLon, p[1]);
+        });
+        var cLat = (minLat + maxLat) / 2, cLon = (minLon + maxLon) / 2;
+        var seed = Math.abs(Math.round(cLat * 1000 + cLon * 997)) | 0;
+        var rng = _forestRng(seed || 42);
+        var pts = [], placed = 0, attempts = 0, max = density * 20;
+        while (placed < density && attempts < max) {
+          attempts++;
+          var lat = minLat + rng() * (maxLat - minLat);
+          var lon = minLon + rng() * (maxLon - minLon);
+          if (_pointInPoly(lat, lon, ring)) {
+            pts.push([lat, lon, variantBase + Math.floor(rng() * 4)]);
+            placed++;
+          }
+        }
+        return pts;
+      }
+
+      var _forestData = [];
+      var _forestActiveSet = new Set();
+      var _forestCanvas = null;
+
+      function _fc(ctx, x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.fill(); }
+      function _tri(ctx, cx, ytop, ybot, hw) {
+        ctx.beginPath(); ctx.moveTo(cx, ytop); ctx.lineTo(cx-hw, ybot); ctx.lineTo(cx+hw, ybot); ctx.closePath(); ctx.fill();
+      }
+
+      var _treeVariants = [
+        // A: single large oak
+        function(ctx, ax, ay, s) {
+          ctx.fillStyle='#7a5c1e'; ctx.fillRect(ax-3*s, ay-8*s, 6*s, 7*s);
+          ctx.fillStyle='#3d6830';
+          _fc(ctx,ax,ay-15*s,9*s); _fc(ctx,ax-7*s,ay-11*s,6*s); _fc(ctx,ax+7*s,ay-11*s,6*s);
+          ctx.fillStyle='#4e8040'; _fc(ctx,ax,ay-20*s,6.5*s);
+        },
+        // B: two oaks side by side
+        function(ctx, ax, ay, s) {
+          ctx.fillStyle='#6b4f1a';
+          ctx.fillRect(ax-11*s,ay-6*s,4*s,5*s); ctx.fillRect(ax+7*s,ay-6*s,4*s,5*s);
+          ctx.fillStyle='#2d5a22';
+          _fc(ctx,ax-9*s,ay-11.5*s,6*s); _fc(ctx,ax-13*s,ay-8.5*s,4*s); _fc(ctx,ax-5*s,ay-8.5*s,4*s);
+          _fc(ctx,ax+9*s,ay-11.5*s,6*s); _fc(ctx,ax+5*s,ay-8.5*s,4*s);  _fc(ctx,ax+13*s,ay-8.5*s,4*s);
+          ctx.fillStyle='#3d7030';
+          _fc(ctx,ax-9*s,ay-15.5*s,4.5*s); _fc(ctx,ax+9*s,ay-15.5*s,4.5*s);
+        },
+        // C: triangle group
+        function(ctx, ax, ay, s) {
+          ctx.fillStyle='#5a4015';
+          ctx.fillRect(ax-10*s,ay-10*s,3*s,7*s); ctx.fillRect(ax+6*s,ay-10*s,3*s,7*s);
+          ctx.fillStyle='#3a6528';
+          _fc(ctx,ax-8.5*s,ay-14*s,5*s); _fc(ctx,ax-11.5*s,ay-11.5*s,3.5*s); _fc(ctx,ax-5.5*s,ay-11.5*s,3.5*s);
+          _fc(ctx,ax+7.5*s,ay-14*s,5*s); _fc(ctx,ax+4.5*s,ay-11.5*s,3.5*s);  _fc(ctx,ax+10.5*s,ay-11.5*s,3.5*s);
+          ctx.fillStyle='#4a7a30';
+          _fc(ctx,ax-8.5*s,ay-17*s,4*s); _fc(ctx,ax+7.5*s,ay-17*s,4*s);
+          ctx.fillStyle='#7a5c1e'; ctx.fillRect(ax-3*s,ay-7*s,4*s,6*s);
+          ctx.fillStyle='#3d6830';
+          _fc(ctx,ax-s,ay-13*s,7*s); _fc(ctx,ax-5.5*s,ay-9.5*s,4.5*s); _fc(ctx,ax+3.5*s,ay-9.5*s,4.5*s);
+          ctx.fillStyle='#4e8040'; _fc(ctx,ax-s,ay-17*s,5*s);
+        },
+        // D: 5 trees (3 back, 2 front)
+        function(ctx, ax, ay, s) {
+          ctx.fillStyle='#6b4f1a';
+          ctx.fillRect(ax-13*s,ay-9*s,2.5*s,7*s);
+          ctx.fillRect(ax-1.5*s,ay-10*s,2.5*s,7*s);
+          ctx.fillRect(ax+9.5*s,ay-9*s,2.5*s,7*s);
+          ctx.fillStyle='#456f32';
+          _fc(ctx,ax-11.5*s,ay-13*s,4*s); _fc(ctx,ax-14*s,ay-10.5*s,2.8*s); _fc(ctx,ax-9*s,ay-10.5*s,2.8*s);
+          _fc(ctx,ax+11*s,ay-13*s,4*s);   _fc(ctx,ax+8.5*s,ay-10.5*s,2.8*s); _fc(ctx,ax+13.5*s,ay-10.5*s,2.8*s);
+          ctx.fillStyle='#5a8840';
+          _fc(ctx,ax-11.5*s,ay-15.5*s,3*s); _fc(ctx,ax+11*s,ay-15.5*s,3*s);
+          ctx.fillStyle='#3d6830';
+          _fc(ctx,ax-0.5*s,ay-14*s,4*s); _fc(ctx,ax-3*s,ay-11.5*s,2.8*s); _fc(ctx,ax+2*s,ay-11.5*s,2.8*s);
+          ctx.fillStyle='#4e8040'; _fc(ctx,ax-0.5*s,ay-16.5*s,3*s);
+          ctx.fillStyle='#7a5c1e';
+          ctx.fillRect(ax-8*s,ay-6*s,3*s,5*s); ctx.fillRect(ax+5*s,ay-6*s,3*s,5*s);
+          ctx.fillStyle='#3d6830';
+          _fc(ctx,ax-6.5*s,ay-10.5*s,5*s); _fc(ctx,ax-9.5*s,ay-8*s,3.5*s); _fc(ctx,ax-3.5*s,ay-8*s,3.5*s);
+          _fc(ctx,ax+6.5*s,ay-10.5*s,5*s); _fc(ctx,ax+3.5*s,ay-8*s,3.5*s); _fc(ctx,ax+9.5*s,ay-8*s,3.5*s);
+          ctx.fillStyle='#4e8040';
+          _fc(ctx,ax-6.5*s,ay-13.5*s,3.8*s); _fc(ctx,ax+6.5*s,ay-13.5*s,3.8*s);
+        },
+        // E: single spruce
+        function(ctx, ax, ay, s) {
+          ctx.fillStyle='#3a2810'; ctx.fillRect(ax-1.5*s, ay-6*s, 3*s, 6*s);
+          ctx.fillStyle='#1a4228'; _tri(ctx,ax, ay-15*s, ay-3*s, 9*s);
+          ctx.fillStyle='#245c36'; _tri(ctx,ax, ay-19*s, ay-9*s, 6.5*s);
+          ctx.fillStyle='#326e46'; _tri(ctx,ax, ay-23*s, ay-15*s, 4.5*s);
+        },
+        // F: two spruces
+        function(ctx, ax, ay, s) {
+          ctx.fillStyle='#3a2810';
+          ctx.fillRect(ax-12.5*s,ay-5*s,2.5*s,5*s); ctx.fillRect(ax+8.5*s,ay-5*s,2.5*s,5*s);
+          ctx.fillStyle='#1a4228';
+          _tri(ctx,ax-11*s, ay-14*s, ay-2*s, 8*s); _tri(ctx,ax+10*s, ay-14*s, ay-2*s, 8*s);
+          ctx.fillStyle='#245c36';
+          _tri(ctx,ax-11*s, ay-18*s, ay-8*s, 5.5*s); _tri(ctx,ax+10*s, ay-18*s, ay-8*s, 5.5*s);
+          ctx.fillStyle='#326e46';
+          _tri(ctx,ax-11*s, ay-21*s, ay-14*s, 3.5*s); _tri(ctx,ax+10*s, ay-21*s, ay-14*s, 3.5*s);
+        },
+        // G: two back + one taller front spruce
+        function(ctx, ax, ay, s) {
+          ctx.fillStyle='#3a2810';
+          ctx.fillRect(ax-13*s,ay-4*s,2*s,4*s); ctx.fillRect(ax+10*s,ay-4*s,2*s,4*s);
+          ctx.fillStyle='#141e14';
+          _tri(ctx,ax-12*s, ay-12*s, ay-1*s, 6*s); _tri(ctx,ax+11*s, ay-12*s, ay-1*s, 6*s);
+          ctx.fillStyle='#1a2e1e';
+          _tri(ctx,ax-12*s, ay-15*s, ay-7*s, 4*s);  _tri(ctx,ax+11*s, ay-15*s, ay-7*s, 4*s);
+          ctx.fillStyle='#245030';
+          _tri(ctx,ax-12*s, ay-17*s, ay-11*s, 2.5*s); _tri(ctx,ax+11*s, ay-17*s, ay-11*s, 2.5*s);
+          ctx.fillStyle='#3a2810'; ctx.fillRect(ax-1.5*s,ay-6*s,3*s,6*s);
+          ctx.fillStyle='#1a4228'; _tri(ctx,ax, ay-16*s, ay-3*s, 8.5*s);
+          ctx.fillStyle='#245c36'; _tri(ctx,ax, ay-20*s, ay-9*s, 6*s);
+          ctx.fillStyle='#326e46'; _tri(ctx,ax, ay-23*s, ay-15*s, 4*s);
+        },
+        // H: dense spruce group
+        function(ctx, ax, ay, s) {
+          ctx.fillStyle='#3a2810';
+          ctx.fillRect(ax-18*s,ay-4*s,2*s,4*s); ctx.fillRect(ax-1*s,ay-4*s,2*s,4*s); ctx.fillRect(ax+15*s,ay-4*s,2*s,4*s);
+          ctx.fillStyle='#0e1a10';
+          _tri(ctx,ax-17*s, ay-11*s, ay-1*s, 5.5*s);
+          _tri(ctx,ax,      ay-11*s, ay-1*s, 5.5*s);
+          _tri(ctx,ax+16*s, ay-11*s, ay-1*s, 5.5*s);
+          ctx.fillStyle='#162414';
+          _tri(ctx,ax-17*s, ay-14*s, ay-7*s, 4*s);
+          _tri(ctx,ax,      ay-14*s, ay-7*s, 4*s);
+          _tri(ctx,ax+16*s, ay-14*s, ay-7*s, 4*s);
+          ctx.fillStyle='#3a2810';
+          ctx.fillRect(ax-10.5*s,ay-6*s,3*s,6*s); ctx.fillRect(ax+6.5*s,ay-6*s,3*s,6*s);
+          ctx.fillStyle='#1a4228';
+          _tri(ctx,ax-9*s, ay-16*s, ay-2*s, 8*s); _tri(ctx,ax+8*s, ay-16*s, ay-2*s, 8*s);
+          ctx.fillStyle='#245c36';
+          _tri(ctx,ax-9*s, ay-20*s, ay-9*s, 6*s);  _tri(ctx,ax+8*s, ay-20*s, ay-9*s, 6*s);
+          ctx.fillStyle='#326e46';
+          _tri(ctx,ax-9*s, ay-23*s, ay-15*s, 4*s); _tri(ctx,ax+8*s, ay-23*s, ay-15*s, 4*s);
+        },
+        // I: single jungle tree — tall trunk, compact irregular canopy
+        function(ctx, ax, ay, s) {
+          ctx.fillStyle='#5c3a10'; ctx.fillRect(ax-2*s, ay-18*s, 4*s, 18*s);
+          ctx.fillStyle='#1a6010';
+          _fc(ctx,ax+1*s,ay-21*s,7*s); _fc(ctx,ax-7*s,ay-20*s,5*s); _fc(ctx,ax+9*s,ay-20*s,5.5*s);
+          _fc(ctx,ax-12*s,ay-19*s,3.5*s); _fc(ctx,ax+13*s,ay-19*s,3.5*s);
+          ctx.fillStyle='#2e8c1e';
+          _fc(ctx,ax,ay-27*s,5.5*s); _fc(ctx,ax-6*s,ay-25*s,4*s); _fc(ctx,ax+7*s,ay-26*s,4.5*s);
+          _fc(ctx,ax+12*s,ay-23*s,3*s);
+          ctx.fillStyle='#4aaa28';
+          _fc(ctx,ax+1*s,ay-31*s,3.5*s); _fc(ctx,ax-4*s,ay-29*s,2.5*s); _fc(ctx,ax+6*s,ay-30*s,3*s);
+          _fc(ctx,ax,ay-34*s,2.5*s);
+        },
+        // J: two jungle trees — prominent trunks, compact canopies
+        function(ctx, ax, ay, s) {
+          ctx.fillStyle='#5c3a10'; ctx.fillRect(ax-15*s,ay-17*s,3.5*s,17*s);
+          ctx.fillStyle='#1a6010';
+          _fc(ctx,ax-14*s,ay-20*s,6.5*s); _fc(ctx,ax-20*s,ay-19*s,4.5*s); _fc(ctx,ax-8*s,ay-19*s,4.5*s);
+          ctx.fillStyle='#2e8c1e';
+          _fc(ctx,ax-14*s,ay-26*s,5*s); _fc(ctx,ax-20*s,ay-23*s,3.5*s); _fc(ctx,ax-8*s,ay-24*s,4*s);
+          ctx.fillStyle='#4aaa28';
+          _fc(ctx,ax-14*s,ay-30*s,3.5*s); _fc(ctx,ax-19*s,ay-28*s,2.5*s); _fc(ctx,ax-9*s,ay-29*s,3*s);
+          _fc(ctx,ax-13*s,ay-33*s,2.5*s);
+          ctx.fillStyle='#5c3a10'; ctx.fillRect(ax+10*s,ay-13*s,3.5*s,13*s);
+          ctx.fillStyle='#1a6010';
+          _fc(ctx,ax+11*s,ay-16*s,6*s); _fc(ctx,ax+17*s,ay-15*s,4.5*s); _fc(ctx,ax+5*s,ay-15*s,4*s);
+          ctx.fillStyle='#2e8c1e';
+          _fc(ctx,ax+12*s,ay-22*s,4.5*s); _fc(ctx,ax+18*s,ay-19*s,3*s); _fc(ctx,ax+6*s,ay-20*s,3.5*s);
+          ctx.fillStyle='#4aaa28';
+          _fc(ctx,ax+11*s,ay-26*s,3*s); _fc(ctx,ax+17*s,ay-23*s,2.5*s); _fc(ctx,ax+6*s,ay-24*s,2.5*s);
+        },
+        // K: three jungle trees — long trunks, irregular canopy clusters
+        function(ctx, ax, ay, s) {
+          ctx.fillStyle='#5c3a10'; ctx.fillRect(ax-18*s,ay-11*s,3*s,11*s);
+          ctx.fillStyle='#0e3a08';
+          _fc(ctx,ax-17*s,ay-14*s,5.5*s); _fc(ctx,ax-22*s,ay-13*s,4*s); _fc(ctx,ax-12*s,ay-13*s,3.5*s);
+          _fc(ctx,ax-17*s,ay-19*s,4*s); _fc(ctx,ax-11*s,ay-17*s,3*s);
+          ctx.fillStyle='#5c3a10'; ctx.fillRect(ax+13*s,ay-13*s,3.5*s,13*s);
+          ctx.fillStyle='#163e0a';
+          _fc(ctx,ax+15*s,ay-17*s,6*s); _fc(ctx,ax+21*s,ay-15*s,4*s); _fc(ctx,ax+9*s,ay-15*s,4*s);
+          _fc(ctx,ax+15*s,ay-23*s,4.5*s); _fc(ctx,ax+21*s,ay-20*s,3*s); _fc(ctx,ax+10*s,ay-21*s,3.5*s);
+          ctx.fillStyle='#1e5a12';
+          _fc(ctx,ax+15*s,ay-27*s,3*s); _fc(ctx,ax+21*s,ay-24*s,2.5*s);
+          ctx.fillStyle='#5c3a10'; ctx.fillRect(ax-3*s,ay-19*s,4.5*s,19*s);
+          ctx.fillStyle='#1a6010';
+          _fc(ctx,ax-1*s,ay-22*s,7*s); _fc(ctx,ax-9*s,ay-21*s,5*s); _fc(ctx,ax+7*s,ay-21*s,5*s);
+          _fc(ctx,ax-14*s,ay-20*s,3.5*s); _fc(ctx,ax+12*s,ay-20*s,3.5*s);
+          ctx.fillStyle='#2e8c1e';
+          _fc(ctx,ax,ay-29*s,5.5*s); _fc(ctx,ax-7*s,ay-26*s,4*s); _fc(ctx,ax+8*s,ay-27*s,4.5*s);
+          _fc(ctx,ax-13*s,ay-23*s,3*s);
+          ctx.fillStyle='#4aaa28';
+          _fc(ctx,ax-1*s,ay-33*s,3.5*s); _fc(ctx,ax+6*s,ay-31*s,2.5*s); _fc(ctx,ax-7*s,ay-30*s,3*s);
+          _fc(ctx,ax,ay-37*s,2.5*s);
+        },
+        // L: dense jungle — tall trunks, layered but compact canopies
+        function(ctx, ax, ay, s) {
+          ctx.fillStyle='#5c3a10';
+          ctx.fillRect(ax-23*s,ay-10*s,3*s,10*s); ctx.fillRect(ax+2*s,ay-10*s,3.5*s,10*s); ctx.fillRect(ax+19*s,ay-8*s,2.5*s,8*s);
+          ctx.fillStyle='#0e3a08';
+          _fc(ctx,ax-21*s,ay-13*s,5.5*s); _fc(ctx,ax+3.5*s,ay-13*s,5.5*s); _fc(ctx,ax+20*s,ay-11*s,4.5*s);
+          _fc(ctx,ax-26*s,ay-11*s,3.5*s); _fc(ctx,ax-16*s,ay-11*s,4*s); _fc(ctx,ax-2*s,ay-12*s,4*s);
+          _fc(ctx,ax+9*s,ay-11*s,4*s); _fc(ctx,ax+24*s,ay-10*s,3.5*s);
+          ctx.fillStyle='#5c3a10';
+          ctx.fillRect(ax-12*s,ay-17*s,4.5*s,17*s); ctx.fillRect(ax+6*s,ay-16*s,4*s,16*s);
+          ctx.fillStyle='#1a6010';
+          _fc(ctx,ax-10*s,ay-20*s,8*s); _fc(ctx,ax+8*s,ay-20*s,7.5*s);
+          _fc(ctx,ax-18*s,ay-18*s,5*s); _fc(ctx,ax-2*s,ay-19*s,5.5*s);
+          _fc(ctx,ax+2*s,ay-18*s,5*s);  _fc(ctx,ax+15*s,ay-17*s,4.5*s);
+          ctx.fillStyle='#2e8c1e';
+          _fc(ctx,ax-11*s,ay-28*s,6*s); _fc(ctx,ax+8*s,ay-27*s,5.5*s);
+          _fc(ctx,ax-19*s,ay-24*s,4*s); _fc(ctx,ax+1*s,ay-26*s,5*s); _fc(ctx,ax+16*s,ay-23*s,3.5*s);
+          _fc(ctx,ax-16*s,ay-21*s,3.5*s);
+          ctx.fillStyle='#4aaa28';
+          _fc(ctx,ax-10*s,ay-33*s,4*s); _fc(ctx,ax+8*s,ay-33*s,4*s);
+          _fc(ctx,ax-17*s,ay-29*s,3*s); _fc(ctx,ax+14*s,ay-28*s,3*s);
+          _fc(ctx,ax-2*s,ay-36*s,3*s);  _fc(ctx,ax+5*s,ay-37*s,2.5*s);
+        }
+      ];
+
+      function _forestRedraw() {
+        if (!_forestCanvas) return;
+        var topLeft = map.containerPointToLayerPoint([0, 0]);
+        L.DomUtil.setPosition(_forestCanvas, topLeft);
+        var size = map.getSize();
+        _forestCanvas.width = size.x;
+        _forestCanvas.height = size.y;
+        var ctx = _forestCanvas.getContext('2d');
+        ctx.clearRect(0, 0, size.x, size.y);
+        if (!map.hasLayer(lg_forests)) return;
+        var z = map.getZoom();
+        var t = Math.max(0, Math.min(1, (z - 1) / 6));
+        var s = 0.05 + 1.75 * t * t;
+        var w = size.x, h = size.y, pad = 50;
+        var tx = topLeft.x, ty = topLeft.y;
+        _forestData.forEach(function(forest, idx) {
+          if (!_forestActiveSet.has(idx)) return;
+          forest.points.forEach(function(pt) {
+            var lp = map.latLngToLayerPoint([pt[0], pt[1]]);
+            var x = lp.x - tx, y = lp.y - ty;
+            if (x < -pad || x > w + pad || y < -pad || y > h + pad) return;
+            _treeVariants[pt[2]](ctx, x, y, s);
+          });
+        });
+      }
+
+      function _updateForestVisibility(year) {
+        _forestActiveSet.clear();
+        _forestData.forEach(function(f, idx) {
+          var active = (f.startYear === null || year >= f.startYear) &&
+                       (f.endYear === null   || year <= f.endYear);
+          if (active) _forestActiveSet.add(idx);
+        });
+        _forestRedraw();
+      }
+
+      async function getTownIndex() {
+        try {
+          var r = await fetch('data/towns/index.json');
+          if (!r.ok) return;
+          var names = await r.json();
+          names.forEach(function(n) { TOWN_MAP_FILES[n] = 'data/towns/' + n + '.geojson'; });
+        } catch(e) { console.log('getTownIndex error', e); }
+      }
+
+      async function getForests() {
+        try {
+          var data = (_mapData && _mapData.forests) || [];
+          if (!data.length) return;
+          _forestCanvas = document.createElement('canvas');
+          _forestCanvas.style.cssText = 'position:absolute;pointer-events:none;';
+          map.getPanes().overlayPane.appendChild(_forestCanvas);
+          map.on('moveend zoomend viewreset', _forestRedraw);
+          map.on('layeradd layerremove', function(e) { if (e.layer === lg_forests) _forestRedraw(); });
+          data.forEach(function(item) {
+            var raw = item.coords || '';
+            var nums = raw.split(',').map(function(s){ return parseFloat(s.trim()); }).filter(function(n){ return !isNaN(n); });
+            if (nums.length < 6) return;
+            var ring = [];
+            for (var i = 0; i + 1 < nums.length; i += 2) ring.push([nums[i], nums[i+1]]);
+            var density = Number(item.density) || 40;
+            var sv = Number.isFinite(Number(item.startYear)) ? Number(item.startYear) : null;
+            var ev = Number.isFinite(Number(item.endYear))   ? Number(item.endYear)   : null;
+            var vBase = item.treeStyle === 'spruce' ? 4 : item.treeStyle === 'jungle' ? 8 : 0;
+            _forestData.push({ points: _scatterTrees(ring, density, vBase), startYear: sv, endYear: ev });
+            L.polygon(ring, { weight: 0, opacity: 0, fillOpacity: 0, interactive: false }).addTo(lg_forests);
+          });
+          lg_forests.addTo(map);
+          _updateForestVisibility(timelineCurrentTime ? milisToYear(timelineCurrentTime) : timelineMaxYear);
+          console.log('getForests: loaded', data.length, 'forest(s),',
+            _forestData.reduce(function(a,f){ return a+f.points.length; },0), 'trees (canvas)');
+        } catch(err) { console.log('getForests error', err); }
+      }
+
+      // ── Town Map System ──────────────────────────────────────────────────────
+      // Populated at load time from data/towns/index.json (built by build_locations.py)
+      var TOWN_MAP_FILES = {};
+
+      // Scale: map units → metres. 3000 units spans the full town.
+      // Adjust per-town if you know its real-world size.
+      var TOWN_METERS_PER_UNIT = 1.0;  // 3000 units = 3000 m (1 unit = 1 m)
+      var TOWN_DEFAULT_ZOOM = 0;       // zoom level on first load (minZoom:-3, maxZoom:4)
+
+      function _townTimeStr(minutes) {
+        if (minutes < 1) return Math.round(minutes * 60) + ' sec';
+        if (minutes < 60) return Math.round(minutes) + ' min';
+        return Math.floor(minutes / 60) + ' hr ' + Math.round(minutes % 60) + ' min';
+      }
+
+      var BUILDING_COLORS = {
+        // Actual fantasytowngenerator buildingType values
+        'RESIDENCE':       '#7a5a38',
+        'ARTISAN':         '#7a4a28',
+        'SHOP':            '#4a6a38',
+        'INDUSTRIAL':      '#5a5248',
+        'TAVERN':          '#6a3a48',
+        'FARM':            '#5c5a28',
+        'SERVICE':         '#3a5068',
+        'WAREHOUSE':       '#5a4a38',
+        'LAW_ENFORCEMENT': '#3a3a5a',
+        'INN':             '#6a3a48',
+        'MARKET':          '#6a5a28',
+        'RELIGIOUS':       '#4a3a5a',
+        'EDUCATIONAL':     '#3a4a5a',
+        'FACTION':         '#2a4a4a',
+        // Legacy / generic types
+        'HOUSE': '#7a5a38', 'CHURCH': '#4a3a5a', 'TEMPLE': '#4a3a5a',
+        'GUILD': '#4a3a5a', 'CASTLE': '#5a5058', 'TOWER': '#5a5058',
+        'STABLE': '#5a4a28', 'BLACKSMITH': '#4a3828'
+      };
+      var BUILDING_DEFAULT_COLOR = '#6a5248';
+
+      var BACKGROUND_COLORS = {
+        'LAWN_TEXTURE_TYPE':   '#508645',
+        'WHEAT':               '#E6D7A2',
+        'GRAIN':               '#E6D7A2',
+        'GRASS':               '#3D6830',
+        'FOREST':              '#2E6642',
+        'TILLED':              '#9C8A7B',
+        'CATTLE_TEXTURE_TYPE': '#93A77D',
+        'PIGS_TEXTURE_TYPE':   '#93A77D',
+        'SAND':                '#DEC496',
+        'ROAD_TEXTURE_TYPE':   '#B6B2AD'
+      };
+      var BACKGROUND_DEFAULT = '#508645';
+
+      var _townMap = null;
+      var _townCurrentName = null;
+      var _townRouteFrom = null;
+      var _townRouteTo = null;
+      var _townRoutePolylines = [];
+      var _townGraph = null;
+      var _townBuildingCentroids = {};
+      var _townBuildingLayers = {};
+      var _townHighlightLayer = null;
+      var _townKankaLinks = {};
+
+      function _townCentroid(coords) {
+        var sx = 0, sy = 0, n = coords.length;
+        coords.forEach(function(c){ sx += c[0]; sy += c[1]; });
+        return [sx/n, sy/n];
+      }
+
+      function _townSearchInput() {
+        var inp = document.getElementById('town-search-input');
+        var res = document.getElementById('town-search-results');
+        if (!inp || !res) return;
+        var q = inp.value.trim().toLowerCase();
+        if (!q) { res.style.display = 'none'; return; }
+        var matches = Object.keys(_townBuildingCentroids).filter(function(k) {
+          return _townBuildingCentroids[k].label.toLowerCase().indexOf(q) !== -1;
+        }).slice(0, 12);
+        if (!matches.length) { res.style.display = 'none'; return; }
+        res.innerHTML = matches.map(function(k) {
+          var label = _townBuildingCentroids[k].label;
+          var safe = k.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+          return '<div class="town-search-result" onclick="_townGoTo(\'' + safe + '\')">' + label + '</div>';
+        }).join('');
+        res.style.display = 'block';
+      }
+
+      function _townGoTo(routeKey) {
+        var cen = _townBuildingCentroids[routeKey];
+        var lyr = _townBuildingLayers[routeKey];
+        if (!cen || !_townMap) return;
+        // Clear previous highlight
+        if (_townHighlightLayer) {
+          try { _townHighlightLayer.setStyle({color:'#0a0806',weight:0.5,fillOpacity:0.9}); } catch(e){}
+          _townHighlightLayer = null;
+        }
+        _townMap.setView([cen.y, cen.x], _townMap.getMaxZoom());
+        if (lyr) {
+          _townHighlightLayer = lyr;
+          lyr.setStyle({color:'#e59500', weight:2.5, fillOpacity:1});
+          try { lyr.eachLayer(function(l){ l.openPopup(); }); } catch(e){}
+        }
+        var inp = document.getElementById('town-search-input');
+        var res = document.getElementById('town-search-results');
+        if (inp) inp.value = '';
+        if (res) res.style.display = 'none';
+      }
+
+      function _buildTownGraph(features) {
+        var nodes = [], nodeIdx = {}, adj = [];
+        function addNode(x, y) {
+          var key = Math.round(x*10) + ',' + Math.round(y*10);
+          if (!(key in nodeIdx)) { nodeIdx[key] = nodes.length; nodes.push([x, y]); adj.push([]); }
+          return nodeIdx[key];
+        }
+        features.forEach(function(f) {
+          if (!f.geometry || f.geometry.type !== 'LineString') return;
+          var et = (f.properties && f.properties.edgeType) || '';
+          if (et === 'BORDER' || et === 'INVISIBLE') return;
+          var coords = f.geometry.coordinates;
+          for (var i = 0; i + 1 < coords.length; i++) {
+            var ax = coords[i][0], ay = coords[i][1], bx = coords[i+1][0], by = coords[i+1][1];
+            var dist = Math.sqrt((bx-ax)*(bx-ax) + (by-ay)*(by-ay));
+            var ni = addNode(ax, ay), nj = addNode(bx, by);
+            adj[ni].push({node: nj, dist: dist}); adj[nj].push({node: ni, dist: dist});
+          }
+        });
+        return {nodes: nodes, adj: adj};
+      }
+
+      function _nearestTownNode(graph, x, y) {
+        var best = -1, bestD = Infinity;
+        graph.nodes.forEach(function(n, i) {
+          var d = (n[0]-x)*(n[0]-x) + (n[1]-y)*(n[1]-y);
+          if (d < bestD) { bestD = d; best = i; }
+        });
+        return best;
+      }
+
+      function _dijkstraTown(graph, start, end) {
+        var dist = new Array(graph.nodes.length).fill(Infinity);
+        var prev = new Array(graph.nodes.length).fill(-1);
+        var visited = new Array(graph.nodes.length).fill(false);
+        dist[start] = 0;
+        for (;;) {
+          var u = -1;
+          for (var i = 0; i < dist.length; i++) if (!visited[i] && dist[i] < Infinity && (u === -1 || dist[i] < dist[u])) u = i;
+          if (u === -1 || u === end) break;
+          visited[u] = true;
+          graph.adj[u].forEach(function(e) {
+            var nd = dist[u] + e.dist;
+            if (nd < dist[e.node]) { dist[e.node] = nd; prev[e.node] = u; }
+          });
+        }
+        if (dist[end] === Infinity) return null;
+        var path = [];
+        for (var v = end; v !== -1; v = prev[v]) path.unshift(v);
+        return path;
+      }
+
+      function openTownMap(name) {
+        var file = TOWN_MAP_FILES[name];
+        if (!file) return;
+        _townCurrentName = name;
+        document.getElementById('town-map-title').textContent = name;
+        document.getElementById('town-map-modal').classList.add('open');
+        try { updateHashFromMap(); } catch(e){}
+        if (_townMap) { _townMap.remove(); _townMap = null; _townGraph = null; }
+        _townRouteFrom = null; _townRouteTo = null; _townRoutePolylines = []; _townBuildingCentroids = {};
+        var _tpFrom = document.getElementById('route-from-name');
+        var _tpTo   = document.getElementById('route-to-name');
+        if (_tpFrom) _tpFrom.textContent = '--';
+        if (_tpTo)   _tpTo.textContent   = '--';
+        _clearRouteDisplay();
+        setTimeout(function() {
+          _townMap = L.map('town-leaflet-map', { crs: L.CRS.Simple, minZoom: -3, maxZoom: 4, zoomSnap: 0.25 });
+          _townMap.setView([0, 0], 0);
+          var linksFile = file.replace('.geojson', '_links.json');
+          Promise.all([
+            fetch(file).then(function(r){ return r.json(); }),
+            fetch(linksFile).then(function(r){ return r.ok ? r.json() : {}; }).catch(function(){ return {}; })
+          ]).then(function(results) {
+          var gj = results[0];
+          _townKankaLinks = results[1] || {};
+            _townGraph = _buildTownGraph(gj.features);
+
+            // Separate into groups so render order is always correct:
+            // background → water → buildings → edges (roads/fences on top)
+            var _bgs = [], _waters = [], _bldgs = [], _edges = [];
+            gj.features.forEach(function(f) {
+              if (!f.geometry) return;
+              var t = (f.properties && f.properties.type) || '';
+              if      (t === 'BACKGROUND') _bgs.push(f);
+              else if (t === 'WATER')      _waters.push(f);
+              else if (t === 'BUILDING')   _bldgs.push(f);
+              else if (t === 'EDGE')       _edges.push(f);
+            });
+
+            // 1. Background land textures (fields, forest patches, pasture, etc.)
+            _bgs.forEach(function(f) {
+              var bt  = (f.properties && f.properties.backgroundType) || '';
+              var col = BACKGROUND_COLORS[bt] || BACKGROUND_DEFAULT;
+              L.geoJSON(f, {style:{weight:0,fillColor:col,fillOpacity:1}}).addTo(_townMap);
+            });
+
+            // 2. Water
+            _waters.forEach(function(f) {
+              L.geoJSON(f, {style:{weight:0,fillColor:'#4A86E0',fillOpacity:1}}).addTo(_townMap);
+            });
+
+            // 3. Buildings (always above background and water)
+            _bldgs.forEach(function(f) {
+              var bt    = ((f.properties && f.properties.buildingType) || '').toUpperCase();
+              var col   = BUILDING_COLORS[bt] || BUILDING_DEFAULT_COLOR;
+              var bname = (f.properties && f.properties.name) || bt || 'Building';
+              var bid   = (f.properties && f.properties.id) || 0;
+              var routeKey = bid ? (bname + '#' + bid) : bname;
+              var safeKey  = routeKey.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+              var lyr = L.geoJSON(f, {style:{color:'#0a0806',weight:0.5,fillColor:col,fillOpacity:0.9}});
+              lyr.on('mouseover', function() { this.setStyle({color:'#ffffff',weight:2,fillOpacity:1}); });
+              lyr.on('mouseout',  function() {
+                if (_townHighlightLayer === this) { this.setStyle({color:'#e59500',weight:2.5,fillOpacity:1}); }
+                else { this.setStyle({color:'#0a0806',weight:0.5,fillOpacity:0.9}); }
+              });
+              var kankaEntry = _townKankaLinks[bname];
+              lyr.bindPopup(
+                '<div style="padding:6px 8px;min-width:140px;">' +
+                '<strong style="color:#e0cfa0;">' + bname + '</strong>' +
+                (bt ? '<div style="font-size:11px;color:#a08050;margin-top:2px;">' + bt.replace(/_/g,' ') + '</div>' : '') +
+                (kankaEntry ? '<div style="margin-top:5px;"><a href="' + kankaEntry.kanka_url + '" target="_blank" style="color:#7a93ac;font-size:11px;text-decoration:none;">View in Kanka ↗</a></div>' : '') +
+                '<div style="margin-top:8px;display:flex;gap:6px;">' +
+                '<button class="town-route-btn" onclick="setTownRouteFrom(\'' + safeKey + '\',\'' + bname.replace(/'/g,"\\'") + '\')">Set as From</button>' +
+                '<button class="town-route-btn" onclick="setTownRouteTo(\'' + safeKey + '\',\'' + bname.replace(/'/g,"\\'") + '\')">Set as To</button>' +
+                '</div></div>'
+              );
+              lyr.addTo(_townMap);
+              if (f.geometry.type === 'Polygon' && f.geometry.coordinates[0].length) {
+                var cen = _townCentroid(f.geometry.coordinates[0]);
+                _townBuildingCentroids[routeKey] = {x: cen[0], y: cen[1], label: bname};
+                _townBuildingLayers[routeKey] = lyr;
+              }
+            });
+
+            // 4. Edges: main roads wider, stone fences dashed, regular roads thin
+            _edges.forEach(function(f) {
+              var et = (f.properties && f.properties.edgeType) || '';
+              if (et === 'BORDER' || et === 'INVISIBLE') return;
+              var st;
+              if      (et === 'MAIN_ROAD')    st = {color:'#8a7a58',weight:3,opacity:0.85};
+              else if (et === 'STONE_FENCE')  st = {color:'#7a7068',weight:1.5,opacity:0.8,dashArray:'4,3'};
+              else                             st = {color:'#5a4a30',weight:2,opacity:0.6};
+              L.geoJSON(f, {style:st}).addTo(_townMap);
+            });
+
+            try { var _tb = L.geoJSON({type:'FeatureCollection',features:_bgs.concat(_waters)}).getBounds(); _townMap.setView(_tb.getCenter(), TOWN_DEFAULT_ZOOM); } catch(e){}
+          }).catch(function(err){ console.log('Town map load error:', err); });
+        }, 50);
+      }
+
+      function closeTownMap() {
+        document.getElementById('town-map-modal').classList.remove('open');
+        if (_townMap) { _townMap.remove(); _townMap = null; }
+        _townCurrentName = null;
+        _townRouteFrom = null; _townRouteTo = null; _townBuildingCentroids = {}; _townBuildingLayers = {}; _townHighlightLayer = null;
+        var inp = document.getElementById('town-search-input'); if (inp) inp.value = '';
+        var res = document.getElementById('town-search-results'); if (res) res.style.display = 'none';
+        var _tpFrom = document.getElementById('route-from-name');
+        var _tpTo   = document.getElementById('route-to-name');
+        if (_tpFrom) _tpFrom.textContent = '--';
+        if (_tpTo)   _tpTo.textContent   = '--';
+        _clearRouteDisplay();
+        try { updateHashFromMap(); } catch(e){}
+      }
+
+      function setTownRouteFrom(key, label) {
+        _townRouteFrom = key;
+        var el = document.getElementById('route-from-name');
+        if (el) el.textContent = label || key;
+        if (_townMap) _townMap.closePopup();
+        _openRoutePlanner();
+        _drawTownRoute();
+      }
+
+      function setTownRouteTo(key, label) {
+        _townRouteTo = key;
+        var el = document.getElementById('route-to-name');
+        if (el) el.textContent = label || key;
+        if (_townMap) _townMap.closePopup();
+        _openRoutePlanner();
+        _drawTownRoute();
+      }
+
+      function clearTownRoute() {
+        _townRouteFrom = null; _townRouteTo = null;
+        var fromEl = document.getElementById('route-from-name');
+        var toEl   = document.getElementById('route-to-name');
+        if (fromEl) fromEl.textContent = '--';
+        if (toEl)   toEl.textContent   = '--';
+        _clearRouteDisplay();
+      }
+
+      function _drawTownRoute() {
+        _townRoutePolylines.forEach(function(p){ try{ _townMap.removeLayer(p); }catch(e){} });
+        _townRoutePolylines = [];
+        var trEl = document.getElementById('route-town-result');
+        if (trEl) trEl.style.display = 'none';
+        if (!_townRouteFrom || !_townRouteTo || _townRouteFrom === _townRouteTo) return;
+        if (!_townGraph || !_townMap) return;
+        var fc = _townBuildingCentroids[_townRouteFrom];
+        var tc = _townBuildingCentroids[_townRouteTo];
+        if (!fc || !tc) return;
+        var startNode = _nearestTownNode(_townGraph, fc.x, fc.y);
+        var endNode   = _nearestTownNode(_townGraph, tc.x, tc.y);
+        if (startNode === -1 || endNode === -1) return;
+        var path = _dijkstraTown(_townGraph, startNode, endNode);
+        if (!path || path.length < 2) return;
+        // Sum path distance in map units, then convert to metres
+        var totalUnits = 0;
+        for (var i = 1; i < path.length; i++) {
+          var na = _townGraph.nodes[path[i-1]], nb = _townGraph.nodes[path[i]];
+          totalUnits += Math.sqrt((nb[0]-na[0])*(nb[0]-na[0]) + (nb[1]-na[1])*(nb[1]-na[1]));
+        }
+        var metres = totalUnits * TOWN_METERS_PER_UNIT;
+        var walkMin = metres / (5000 / 60);   // 5 km/h
+        var runMin  = metres / (12000 / 60);  // 12 km/h
+        var walkEl = document.getElementById('route-town-walk');
+        var runEl  = document.getElementById('route-town-run');
+        if (walkEl) walkEl.textContent = _townTimeStr(walkMin);
+        if (runEl)  runEl.textContent  = _townTimeStr(runMin);
+        if (trEl) trEl.style.display = '';
+        var latlngs = path.map(function(n){ var nd = _townGraph.nodes[n]; return [nd[1], nd[0]]; });
+        var pl = L.polyline(latlngs, {color:'#e59500',weight:3,opacity:0.9,dashArray:'8,4'}).addTo(_townMap);
+        _townRoutePolylines.push(pl);
+        try { _townMap.fitBounds(pl.getBounds(), {padding:[40,40]}); } catch(e){}
+      }
+
     </script>
+    <div id="town-map-modal">
+      <div id="town-map-header">
+        <span id="town-map-title">Town Map</span>
+        <div id="town-search-wrap">
+          <input id="town-search-input" type="text" placeholder="Search buildings..." oninput="_townSearchInput()" autocomplete="off">
+          <div id="town-search-results"></div>
+        </div>
+        <button id="town-map-close" onclick="closeTownMap()">&#x2715; Close</button>
+      </div>
+      <div id="town-map-container">
+        <div id="town-leaflet-map"></div>
+      </div>
+    </div>
   </body>
 </html>
