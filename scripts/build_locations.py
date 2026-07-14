@@ -21,6 +21,13 @@ Kanka attribute conventions (set on the entity's Attributes tab):
     map_type           string  "town" / "marker" / "polyline" / "polygon"
     map_visible_to_players  "true" / "false"  (default: "true")
 
+  Timeline-ranged positions (for locations that move over time):
+    map_lat_STARTYEAR_ENDYEAR  float  e.g. map_lat_1186_2505 = -14.651474
+    map_lon_STARTYEAR_ENDYEAR  float  e.g. map_lon_1186_2505 = -83.446655
+    When any ranged pair is present, the plain map_lat/map_lon is ignored and
+    one timeline-controlled entry is emitted per pair. Same layering/icon/color
+    attributes apply to all positions.
+
   Road / polyline entities:
     map_coords         string  "lat,lon,lat,lon,..."  (required)
     map_road_type      string  "land" / "sea"         (required)
@@ -38,6 +45,7 @@ Kanka attribute conventions (set on the entity's Attributes tab):
 import json
 import math
 import os
+import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -226,11 +234,14 @@ def build_road_graph(
             if to_coords:
                 end_pt = to_coords
             else:
-                # Junction/waypoint not in town_lookup: use whichever polyline
-                # endpoint differs from start_pt (handles reversed-draw roads).
-                last_matches_start = (abs(pts[-1][0] - start_pt[0]) < SNAP_TOL
-                                      and abs(pts[-1][1] - start_pt[1]) < SNAP_TOL)
-                end_pt = pts[0] if last_matches_start else pts[-1]
+                # Junction/waypoint not in town_lookup: pick whichever endpoint
+                # is farther from start_pt. For a correctly-drawn road pts[-1] is
+                # farther; for a reversed draw pts[0] is farther. This avoids the
+                # previous threshold check which false-positively merged sea
+                # junctions that sit within SNAP_TOL of their parent town.
+                dist_first = abs(pts[0][0] - start_pt[0]) + abs(pts[0][1] - start_pt[1])
+                dist_last  = abs(pts[-1][0] - start_pt[0]) + abs(pts[-1][1] - start_pt[1])
+                end_pt = pts[0] if dist_last < dist_first else pts[-1]
         else:
             end_pt = name_snap(road_name, is_start=False) or pts[-1]
 
@@ -282,6 +293,61 @@ def build_road_graph(
 # Main
 # ---------------------------------------------------------------------------
 
+def build_town_kanka_links(raw_locations: list[dict]) -> None:
+    """
+    For each *.geojson in data/towns/, write a <town>_links.json mapping
+    building names to their Kanka location URL.  Matching is case-insensitive
+    on the building's 'name' property against all Kanka location entity names.
+    """
+    towns_dir = OUTPUT_DIR / "towns"
+    if not towns_dir.exists():
+        return
+
+    # Build lookup from ALL Kanka locations (not just map-visible ones)
+    name_to_kanka: dict[str, dict] = {}
+    for loc in raw_locations:
+        child = loc.get("child") or {}
+        name = (loc.get("name") or child.get("name") or "").strip()
+        if not name:
+            continue
+        loc_id = child.get("id") or loc.get("id")
+        name_to_kanka[name.lower()] = {
+            "name": name,
+            "kanka_url": f"https://kanka.io/en-US/campaign/{CAMPAIGN}/locations/{loc_id}",
+        }
+
+    for geojson_path in sorted(towns_dir.glob("*.geojson")):
+        town_name = geojson_path.stem
+        try:
+            with open(geojson_path, encoding="utf-8") as f:
+                gj = json.load(f)
+        except Exception as e:
+            print(f"  warning: could not read {geojson_path.name}: {e}")
+            continue
+
+        links: dict[str, dict] = {}
+        for feature in gj.get("features", []):
+            props = feature.get("properties") or {}
+            if (props.get("type") or "").upper() != "BUILDING":
+                continue
+            bname = (props.get("name") or "").strip()
+            if bname and bname.lower() in name_to_kanka:
+                links[bname] = name_to_kanka[bname.lower()]
+
+        out_path = towns_dir / f"{town_name}_links.json"
+        out_path.write_text(json.dumps(links, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"  {town_name}: {len(links)} building(s) linked to Kanka")
+
+
+def load_static_forests() -> list[dict]:
+    """Return forest polygon objects from data/forests_static.json, or [] if absent."""
+    path = OUTPUT_DIR / "forests_static.json"
+    if not path.exists():
+        return []
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
 def load_static_roads() -> list[dict]:
     """Return road objects from data/roads_static.json, or [] if the file doesn't exist."""
     path = OUTPUT_DIR / "roads_static.json"
@@ -300,6 +366,16 @@ def main():
     raw_locations = fetch_all_locations()
     print(f"Found {len(raw_locations)} location entities. Fetching attributes...")
 
+    print("\nBuilding town Kanka links and index...")
+    build_town_kanka_links(raw_locations)
+    towns_dir = OUTPUT_DIR / "towns"
+    if towns_dir.exists():
+        town_names = sorted(p.stem for p in towns_dir.glob("*.geojson"))
+        (towns_dir / "index.json").write_text(
+            json.dumps(town_names, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        print(f"  Wrote towns/index.json ({len(town_names)} town(s): {', '.join(town_names)})")
+
     locations_out = []
     roads_out = []
     landmarks_out = []
@@ -314,10 +390,25 @@ def main():
         print(f"  [{entity_id}] {name}")
         attrs = fetch_attributes(entity_id)
 
-        has_point = "map_lat" in attrs and "map_lon" in attrs
+        # Detect year-ranged position attributes: map_lat_STARTYEAR_ENDYEAR
+        ranged_positions = []
+        for attr_name, attr_value in attrs.items():
+            m = re.match(r'^map_lat_(\d+)_(\d+)$', attr_name)
+            if m:
+                r_start, r_end = int(m.group(1)), int(m.group(2))
+                lon_key = f"map_lon_{r_start}_{r_end}"
+                if lon_key in attrs:
+                    try:
+                        ranged_positions.append((float(attr_value), float(attrs[lon_key]), r_start, r_end))
+                    except ValueError:
+                        print(f"    warning: invalid ranged lat/lon for '{name}' ({attr_name}) — skipped")
+
+        has_ranged_point = len(ranged_positions) > 0
+        # Suppress plain map_lat/map_lon if ranged versions exist to avoid double display
+        has_point = ("map_lat" in attrs and "map_lon" in attrs) and not has_ranged_point
         has_road = "map_coords" in attrs
 
-        if not has_point and not has_road:
+        if not has_point and not has_ranged_point and not has_road:
             # No map data — skip
             continue
 
@@ -340,9 +431,37 @@ def main():
         is_landmark = map_layer in ("landmarks", "landmark")
 
         try:
-            line_weight = int(attrs.get("map_line_weight", "2"))
+            line_weight = int(attrs.get("map_line_weight", "1"))
         except ValueError:
-            line_weight = 2
+            line_weight = 1
+
+        try:
+            weight_start = float(attrs["map_weight_start"]) if "map_weight_start" in attrs else None
+        except (ValueError, TypeError):
+            weight_start = None
+        try:
+            weight_end = float(attrs["map_weight_end"]) if "map_weight_end" in attrs else None
+        except (ValueError, TypeError):
+            weight_end = None
+
+        if has_ranged_point:
+            for r_lat, r_lon, r_start, r_end in sorted(ranged_positions, key=lambda x: x[2]):
+                obj = {
+                    "name": name,
+                    "lat": r_lat,
+                    "lon": r_lon,
+                    "icon": attrs.get("map_icon", "town"),
+                    "color": colour,
+                    "plane": attrs.get("map_plane", "overworld"),
+                    "map_type": attrs.get("map_type", "town"),
+                    "image_url": image_url,
+                    "entry_html": entry_html,
+                    "kanka_url": kanka_url,
+                    "visible_to_players": attrs.get("map_visible_to_players", "true").lower() != "false",
+                    "startYear": r_start,
+                    "endYear": r_end,
+                }
+                locations_out.append(obj)
 
         if has_point:
             try:
@@ -408,6 +527,10 @@ def main():
                     "image_url": image_url,
                     "kanka_url": kanka_url,
                 }
+                if weight_start is not None:
+                    obj["weight_start"] = weight_start
+                if weight_end is not None:
+                    obj["weight_end"] = weight_end
                 if start_year is not None:
                     obj["startYear"] = start_year
                 if end_year is not None:
@@ -427,6 +550,11 @@ def main():
                 if end_year is not None:
                     obj["endYear"] = end_year
                 roads_out.append(obj)
+
+    # Merge static forests
+    forests_out = load_static_forests()
+    if forests_out:
+        print(f"\nLoaded {len(forests_out)} forest(s) from data/forests_static.json")
 
     # Merge static roads (geometry-only roads stored in the repo, not Kanka)
     static_roads = load_static_roads()
@@ -511,6 +639,7 @@ def main():
         "roads": roads_out,
         "landmarks": landmarks_out,
         "parties": parties_out,
+        "forests": forests_out,
     }
     (OUTPUT_DIR / "map_data.json").write_text(
         json.dumps(map_data, indent=2, ensure_ascii=False), encoding="utf-8"

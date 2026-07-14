@@ -1,0 +1,115 @@
+Locations sorted by start year
+===============================
+
+Year  | Location
+------|----------------------------------------------------------
+96    | Birch
+250   | Skalanes
+350   | Encephia
+400   | The Grove
+430   | Ocring
+432   | Gora
+463   | Fainsborough
+470   | Azloygend
+520   | Duport
+530   | Zesledo
+590   | Gopburn
+600   | Visrora
+650   | Solk
+700   | Weigh
+710   | Vregan
+780   | Vroycaster
+800   | Langadalr
+830   | Oakhaven
+850   | Bar-Anor, Buhrora
+853   | Vex
+920   | Khwek
+926   | Watford
+950   | Treetop Burgh, Bar-Ithil
+960   | Acosey
+990   | Khila
+1000  | Ashford, Snowveil Hamlet
+1004  | Ravenwood
+1020  | Areshull
+1050  | Duskhaven
+1060  | Wrille
+1100  | Brightwood, Icespire Outpost, Stonehollow
+1102  | Hollowfen
+1127  | Stonehaven, Ironrest
+1130  | Ocknard
+1140  | Hearthridge
+1150  | Northbay, Silverkeep, Mirefall
+1160  | Hillstead
+1180  | Riverbend
+1185  | Stormpeak
+1200  | Menigwyne, The Y Stop, Frost Pass, Monhegan, Foxglade, Shliohabior
+1205  | Seabridge
+1212  | Gladmouth
+1220  | Stoneford
+1230  | Sablecross
+1250  | Windcliff
+1275  | Cloverwood
+1280  | Brighthollow
+1300  | Fallowmere, Crystalfen
+1350  | Candlehold, Cliffwatch
+1420  | Saltpoint
+1449  | Hightower
+1450  | Tarcia
+1520  | Veritas
+1525  | Yedif
+1530  | Bearcall
+1545  | Coldford
+1600  | Oakenshell
+1625  | Ilelion
+1630  | Dawnshear
+1632  | Durnport
+1640  | Bereston
+1650  | Wingston
+1655  | Bastion
+1678  | Polperro
+1680  | Hammerton
+1685  | Berxley
+1720  | Lancaster
+1753  | Seer Shack
+1798  | Embercross
+1885  | Dartle
+1887  | Sablemere
+1902  | Vrecia
+1928  | Sun Temple
+1955  | Galo
+1973  | Coldmere
+2012  | Vreji Village
+2074  | Rasheen
+2136  | Vallenshore, Tal'Kora
+2198  | Kelthar
+2206  | Abterra - The Purple City
+2247  | Vloystin
+2271  | Orhass
+2329  | Bast-Kor
+2340  | Chitol
+2401  | Apaleth
+2405  | Rendhar Bay
+2410  | Marrowlight
+2414  | Dunfell, Zirn
+2420  | Averin
+2421  | Black Hollows
+2425  | Wolfspine
+2426  | Greydrift
+2430  | Baulders Deep
+2433  | Seawend
+2438  | Lochhaven
+2440  | Bellmarch
+2446  | Northin
+2448  | Virehold
+2450  | Leondra
+2452  | Windmere, Moonbright
+2458  | Wakefield
+2461  | The Petrified Forest Monastery
+2468  | Alnwick
+2470  | Wandermere
+2473  | Lowood
+2506  | The Tower of the Arcane Arts
+2507  | Varnstead
+2508  | Greymire, Emberforge
+2510  | Lunasreach
+2511  | Inverness
