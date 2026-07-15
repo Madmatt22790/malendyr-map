@@ -344,7 +344,7 @@ def load_static_forests() -> list[dict]:
     path = OUTPUT_DIR / "forests_static.json"
     if not path.exists():
         return []
-    with open(path, encoding="utf-8") as f:
+    with open(path, encoding="utf-8-sig") as f:
         return json.load(f)
 
 
@@ -353,7 +353,7 @@ def load_static_roads() -> list[dict]:
     path = OUTPUT_DIR / "roads_static.json"
     if not path.exists():
         return []
-    with open(path, encoding="utf-8") as f:
+    with open(path, encoding="utf-8-sig") as f:
         return json.load(f)
 
 
