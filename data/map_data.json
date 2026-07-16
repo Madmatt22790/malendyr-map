@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-15T08:41:42Z",
+  "generated": "2026-07-16T08:47:09Z",
   "locations": [
     {
       "name": "The Grove",
@@ -254,21 +254,6 @@
       "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2032078",
       "visible_to_players": true,
       "startYear": 853,
-      "endYear": 2657
-    },
-    {
-      "name": "Watford",
-      "lat": -13.965648,
-      "lon": -86.231689,
-      "icon": "port_city",
-      "color": "red",
-      "plane": "overworld",
-      "map_type": "town",
-      "image_url": "",
-      "entry_html": "",
-      "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2032882",
-      "visible_to_players": true,
-      "startYear": 926,
       "endYear": 2657
     },
     {
