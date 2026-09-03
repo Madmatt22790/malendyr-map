@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-02T11:22:57Z",
+  "generated": "2026-09-03T11:22:15Z",
   "locations": [
     {
       "name": "The Grove",
@@ -974,6 +974,21 @@
       "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127495",
       "visible_to_players": true,
       "startYear": 1205,
+      "endYear": 2657
+    },
+    {
+      "name": "Stoneford",
+      "lat": -1.049105,
+      "lon": -108.308716,
+      "icon": "town",
+      "color": "#20214F",
+      "plane": "overworld",
+      "map_type": "town",
+      "image_url": "",
+      "entry_html": "",
+      "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127496",
+      "visible_to_players": true,
+      "startYear": 1220,
       "endYear": 2657
     },
     {
