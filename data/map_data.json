@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-03T11:22:15Z",
+  "generated": "2026-09-04T11:21:24Z",
   "locations": [
     {
       "name": "The Grove",
@@ -1092,21 +1092,6 @@
       "image_url": "",
       "entry_html": "",
       "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127505",
-      "visible_to_players": true,
-      "startYear": 1350,
-      "endYear": 2657
-    },
-    {
-      "name": "Cliffwatch",
-      "lat": 1.707887,
-      "lon": -106.567383,
-      "icon": "port_town",
-      "color": "#20214F",
-      "plane": "overworld",
-      "map_type": "town",
-      "image_url": "",
-      "entry_html": "",
-      "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127506",
       "visible_to_players": true,
       "startYear": 1350,
       "endYear": 2657
