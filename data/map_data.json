@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-04T14:26:56Z",
+  "generated": "2026-11-05T14:47:49Z",
   "locations": [
     {
       "name": "The Grove",
@@ -642,6 +642,21 @@
       "image_url": "",
       "entry_html": "",
       "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127470",
+      "visible_to_players": true,
+      "startYear": 950,
+      "endYear": 2657
+    },
+    {
+      "name": "Bar-Ithil",
+      "lat": -43.023322,
+      "lon": -131.506348,
+      "icon": "city",
+      "color": "green",
+      "plane": "overworld",
+      "map_type": "town",
+      "image_url": "",
+      "entry_html": "",
+      "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127471",
       "visible_to_players": true,
       "startYear": 950,
       "endYear": 2657
@@ -5527,6 +5542,19 @@
       "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127578",
       "weight_start": 1.5,
       "weight_end": 1.0
+    },
+    {
+      "name": "Ashford River",
+      "type": "Polyline",
+      "coords": "-13.96468, -114.98291, -14.752996, -115.356445, -15.283414, -115.598145, -16.529817, -115.927734, -18.457214, -117.04834, -18.956571, -117.509766, -19.599363, -118.981934, -20.445567, -120.476074, -21.102808, -121.091309, -21.818346, -122.058105, -22.408528, -123.024902, -22.692553, -123.728027, -23.056864, -124.606934, -23.319366, -125.837402, -23.400033, -126.540527, -23.92316, -127.485352, -24.604059, -128.38623, -24.935564, -128.693848, -25.293589, -128.886108, -25.660461, -129.083862",
+      "color": "",
+      "line_weight": 10,
+      "description": "",
+      "url": "",
+      "image_url": "",
+      "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127579",
+      "weight_start": 1.5,
+      "weight_end": 4.0
     },
     {
       "name": "Ashford River",
