@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-11T14:16:33Z",
+  "generated": "2026-11-12T15:19:29Z",
   "locations": [
     {
       "name": "The Grove",
@@ -434,6 +434,21 @@
       "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127452",
       "visible_to_players": true,
       "startYear": 710,
+      "endYear": 2657
+    },
+    {
+      "name": "Vroycaster",
+      "lat": -42.716287,
+      "lon": 59.282227,
+      "icon": "town",
+      "color": "",
+      "plane": "overworld",
+      "map_type": "town",
+      "image_url": "",
+      "entry_html": "",
+      "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127453",
+      "visible_to_players": true,
+      "startYear": 780,
       "endYear": 2657
     },
     {
