@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-17T16:09:25Z",
+  "generated": "2026-11-19T15:55:41Z",
   "locations": [
     {
       "name": "The Grove",
@@ -1304,81 +1304,6 @@
       "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127521",
       "visible_to_players": true,
       "startYear": 1640,
-      "endYear": 2657
-    },
-    {
-      "name": "Bastion",
-      "lat": -4.8470520000000015,
-      "lon": -99.294434,
-      "icon": "town",
-      "color": "red",
-      "plane": "overworld",
-      "map_type": "town",
-      "image_url": "",
-      "entry_html": "",
-      "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127522",
-      "visible_to_players": true,
-      "startYear": 1655,
-      "endYear": 2657
-    },
-    {
-      "name": "Lancaster",
-      "lat": -12.342343000000001,
-      "lon": -85.51757799999999,
-      "icon": "town",
-      "color": "red",
-      "plane": "overworld",
-      "map_type": "town",
-      "image_url": "",
-      "entry_html": "",
-      "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127523",
-      "visible_to_players": true,
-      "startYear": 1720,
-      "endYear": 2657
-    },
-    {
-      "name": "Seer Shack",
-      "lat": -13.327735,
-      "lon": -82.48535199999999,
-      "icon": "town",
-      "color": "red",
-      "plane": "overworld",
-      "map_type": "town",
-      "image_url": "",
-      "entry_html": "",
-      "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127524",
-      "visible_to_players": true,
-      "startYear": 1753,
-      "endYear": 2657
-    },
-    {
-      "name": "Embercross",
-      "lat": -48.567483,
-      "lon": -14.432187,
-      "icon": "town",
-      "color": "orange",
-      "plane": "overworld",
-      "map_type": "town",
-      "image_url": "",
-      "entry_html": "",
-      "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127525",
-      "visible_to_players": true,
-      "startYear": 1798,
-      "endYear": 2657
-    },
-    {
-      "name": "Sablemere",
-      "lat": -65.65037,
-      "lon": 11.752391,
-      "icon": "port_town",
-      "color": "orange",
-      "plane": "overworld",
-      "map_type": "town",
-      "image_url": "",
-      "entry_html": "",
-      "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127526",
-      "visible_to_players": true,
-      "startYear": 1887,
       "endYear": 2657
     },
     {
@@ -5503,19 +5428,6 @@
       "url": "",
       "image_url": "",
       "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127575"
-    },
-    {
-      "name": "Vex River",
-      "type": "Polyline",
-      "coords": "-13.312864, -78.035889, -12.531378, -77.980957, -12.134365, -77.980957, -11.801276, -78.057861, -11.338582, -78.255615, -11.026106, -78.497314, -10.702506, -78.881836, -10.464979, -79.134521, -10.205651, -79.464111, -9.957869, -79.958496, -9.860491, -80.299072, -9.763085, -80.562744, -9.73061, -81.057129, -9.752261, -81.364746, -9.80638, -81.749268, -9.84967, -82.144775, -9.84967, -82.55127, -9.84967, -82.8479, -9.708959, -83.067627",
-      "color": "",
-      "line_weight": 10,
-      "description": "",
-      "url": "",
-      "image_url": "",
-      "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127576",
-      "weight_start": 4.0,
-      "weight_end": 1.0
     },
     {
       "name": "Vex River",
