@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-23T18:09:45Z",
+  "generated": "2026-11-24T17:40:27Z",
   "locations": [
     {
       "name": "The Grove",
@@ -5906,6 +5906,19 @@
       "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127613",
       "weight_start": 1.0,
       "weight_end": 2.5
+    },
+    {
+      "name": "Chitol River",
+      "type": "Polyline",
+      "coords": "35.764432, 20.131504, 35.688641, 19.906343, 35.572586, 19.571347, 35.425043, 19.175943, 35.214439, 18.967257, 34.886244, 18.884881, 34.54315, 18.857436, 34.19865, 18.780552, 33.880096, 18.665226, 33.492342, 18.392592",
+      "color": "",
+      "line_weight": 10,
+      "description": "",
+      "url": "",
+      "image_url": "",
+      "kanka_url": "https://kanka.io/en-US/campaign/347078/locations/2127614",
+      "weight_start": 1.0,
+      "weight_end": 1.5
     }
   ],
   "parties": [],
